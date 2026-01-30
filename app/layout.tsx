@@ -2,8 +2,8 @@ import React from "react"
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { AuthProvider } from '@/lib/auth-context'
-import "./globals.css";
-
+import { WardProvider } from '@/lib/ward-context'
+import './globals.css'
 
 const _geist = Geist({ subsets: ['latin'] })
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
@@ -11,7 +11,6 @@ const _geistMono = Geist_Mono({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'WaneYen - Nurse Scheduling System',
   description: 'Blessed Schedules for a Better Life - A modern nurse scheduling system',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
@@ -39,7 +38,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <WardProvider>{children}</WardProvider>
+        </AuthProvider>
       </body>
     </html>
   )
