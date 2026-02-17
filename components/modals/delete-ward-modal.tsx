@@ -44,6 +44,7 @@ export function DeleteWardModal({
           </Button>
           <Button
             variant="destructive"
+            className="text-white"
             onClick={onDelete}
           >
             ลบวอร์ด
