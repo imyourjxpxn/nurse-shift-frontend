@@ -5,12 +5,14 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from 'react'
 import type { Ward, WardMember, ShiftConfig } from './types'
 
 interface WardContextType {
   wards: Ward[]
+  isHydrated: boolean
   createWard: (
     name: string,
     hospitalId: string,
@@ -59,15 +61,27 @@ const defaultShifts: ShiftConfig[] = [
 export function WardProvider({ children }: { children: ReactNode }) {
   const [wards, setWards] = useState<Ward[]>(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : []
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        return stored ? JSON.parse(stored) : []
+      } catch {
+        return []
+      }
     }
     return []
   })
+  const [isHydrated, setIsHydrated] = useState(false)
 
-  const saveWards = useCallback((newWards: Ward[]) => {
-    setWards(newWards)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newWards))
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+
+  const saveWards = useCallback((updater: Ward[] | ((prev: Ward[]) => Ward[])) => {
+    setWards((prev) => {
+      const newWards = typeof updater === 'function' ? updater(prev) : updater
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newWards))
+      return newWards
+    })
   }, [])
 
   const createWard = useCallback(
@@ -100,11 +114,10 @@ export function WardProvider({ children }: { children: ReactNode }) {
         year: new Date().getFullYear(),
       }
 
-      const newWards = [...wards, newWard]
-      saveWards(newWards)
+      saveWards((prev) => [...prev, newWard])
       return newWard
     },
-    [wards, saveWards]
+    [saveWards]
   )
 
   const joinWard = useCallback(
@@ -113,7 +126,16 @@ export function WardProvider({ children }: { children: ReactNode }) {
       userId: string,
       userName: string
     ): { success: boolean; ward?: Ward; error?: string } => {
-      const ward = wards.find((w) => w.code === code)
+      // Read directly from localStorage for the freshest data
+      let currentWards: Ward[] = []
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        currentWards = stored ? JSON.parse(stored) : []
+      } catch {
+        currentWards = []
+      }
+
+      const ward = currentWards.find((w) => w.code === code)
 
       if (!ward) {
         return { success: false, error: 'รหัสหอผู้ป่วยไม่ถูกต้อง' }
@@ -131,31 +153,37 @@ export function WardProvider({ children }: { children: ReactNode }) {
         userId,
       }
 
-      const updatedWards = wards.map((w) =>
-        w.id === ward.id ? { ...w, members: [...w.members, newMember] } : w
+      saveWards((prev) =>
+        prev.map((w) =>
+          w.id === ward.id ? { ...w, members: [...w.members, newMember] } : w
+        )
       )
-
-      saveWards(updatedWards)
       return {
         success: true,
         ward: { ...ward, members: [...ward.members, newMember] },
       }
     },
-    [wards, saveWards]
+    [saveWards]
   )
 
   const deleteWard = useCallback(
     (wardId: string, userId: string): boolean => {
-      const ward = wards.find((w) => w.id === wardId)
-      if (!ward || ward.createdById !== userId) {
+      let canDelete = false
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        const currentWards: Ward[] = stored ? JSON.parse(stored) : []
+        const ward = currentWards.find((w) => w.id === wardId)
+        canDelete = !!ward && ward.createdById === userId
+      } catch {
         return false
       }
 
-      const newWards = wards.filter((w) => w.id !== wardId)
-      saveWards(newWards)
+      if (!canDelete) return false
+
+      saveWards((prev) => prev.filter((w) => w.id !== wardId))
       return true
     },
-    [wards, saveWards]
+    [saveWards]
   )
 
   const getWardsByHospital = useCallback(
@@ -184,73 +212,72 @@ export function WardProvider({ children }: { children: ReactNode }) {
 
   const updateShiftConfig = useCallback(
     (wardId: string, shifts: ShiftConfig[]) => {
-      const updatedWards = wards.map((w) =>
-        w.id === wardId ? { ...w, shifts } : w
+      saveWards((prev) =>
+        prev.map((w) => (w.id === wardId ? { ...w, shifts } : w))
       )
-      saveWards(updatedWards)
     },
-    [wards, saveWards]
+    [saveWards]
   )
 
   const updateSchedule = useCallback(
     (wardId: string, memberId: string, date: number, shiftCode: string) => {
-      const updatedWards = wards.map((w) => {
-        if (w.id !== wardId) return w
+      saveWards((prev) =>
+        prev.map((w) => {
+          if (w.id !== wardId) return w
 
-        const existingScheduleIndex = w.schedules.findIndex(
-          (s) => s.memberId === memberId
-        )
-
-        if (existingScheduleIndex === -1) {
-          return {
-            ...w,
-            schedules: [
-              ...w.schedules,
-              {
-                memberId,
-                entries: [{ date, shiftCode }],
-              },
-            ],
-          }
-        }
-
-        const updatedSchedules = [...w.schedules]
-        const schedule = { ...updatedSchedules[existingScheduleIndex] }
-        const entryIndex = schedule.entries.findIndex((e) => e.date === date)
-
-        if (entryIndex === -1) {
-          schedule.entries = [...schedule.entries, { date, shiftCode }]
-        } else if (shiftCode === '') {
-          schedule.entries = schedule.entries.filter((e) => e.date !== date)
-        } else {
-          schedule.entries = schedule.entries.map((e) =>
-            e.date === date ? { ...e, shiftCode } : e
+          const existingScheduleIndex = w.schedules.findIndex(
+            (s) => s.memberId === memberId
           )
-        }
 
-        updatedSchedules[existingScheduleIndex] = schedule
-        return { ...w, schedules: updatedSchedules }
-      })
+          if (existingScheduleIndex === -1) {
+            return {
+              ...w,
+              schedules: [
+                ...w.schedules,
+                {
+                  memberId,
+                  entries: [{ date, shiftCode }],
+                },
+              ],
+            }
+          }
 
-      saveWards(updatedWards)
+          const updatedSchedules = [...w.schedules]
+          const schedule = { ...updatedSchedules[existingScheduleIndex] }
+          const entryIndex = schedule.entries.findIndex((e) => e.date === date)
+
+          if (entryIndex === -1) {
+            schedule.entries = [...schedule.entries, { date, shiftCode }]
+          } else if (shiftCode === '') {
+            schedule.entries = schedule.entries.filter((e) => e.date !== date)
+          } else {
+            schedule.entries = schedule.entries.map((e) =>
+              e.date === date ? { ...e, shiftCode } : e
+            )
+          }
+
+          updatedSchedules[existingScheduleIndex] = schedule
+          return { ...w, schedules: updatedSchedules }
+        })
+      )
     },
-    [wards, saveWards]
+    [saveWards]
   )
 
   const clearSchedule = useCallback(
     (wardId: string) => {
-      const updatedWards = wards.map((w) =>
-        w.id === wardId ? { ...w, schedules: [] } : w
+      saveWards((prev) =>
+        prev.map((w) => (w.id === wardId ? { ...w, schedules: [] } : w))
       )
-      saveWards(updatedWards)
     },
-    [wards, saveWards]
+    [saveWards]
   )
 
   return (
     <WardContext.Provider
       value={{
         wards,
+        isHydrated,
         createWard,
         joinWard,
         deleteWard,
