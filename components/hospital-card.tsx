@@ -17,7 +17,7 @@ export function HospitalCard({ hospitalName, onCreateWard }: HospitalCardProps) 
         className="gap-2 bg-sky-500 text-white hover:bg-sky-600"
       >
         <Plus className="size-4" />
-        Create Ward
+        สร้างวอร์ด
       </Button>
     </div>
   )

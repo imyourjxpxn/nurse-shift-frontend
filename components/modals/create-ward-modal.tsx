@@ -40,11 +40,11 @@ export function CreateWardModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Create New Ward</DialogTitle>
+          <DialogTitle className="text-foreground">สร้างวอร์ด</DialogTitle>
         </DialogHeader>
         <div className="py-4">
           <Input
-            placeholder="Ward name"
+            placeholder="กรอกชื่อวอร์ด"
             value={wardName}
             onChange={(e) => setWardName(e.target.value)}
             className="border-sky-300 focus-visible:ring-sky-400"
@@ -55,14 +55,14 @@ export function CreateWardModal({
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            ยกเลิก
           </Button>
           <Button
             onClick={handleCreate}
             disabled={!wardName.trim()}
             className="bg-sky-500 text-white hover:bg-sky-600"
           >
-            Create
+            สร้าง
           </Button>
         </DialogFooter>
       </DialogContent>

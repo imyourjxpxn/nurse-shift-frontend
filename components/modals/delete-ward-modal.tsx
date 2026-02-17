@@ -32,10 +32,10 @@ export function DeleteWardModal({
             <Trash2 className="size-6 text-red-500" />
           </div>
           <DialogTitle className="text-center text-foreground">
-            ลบหอผู้ป่วย
+            ยืนยันการลบวอร์ด
           </DialogTitle>
           <DialogDescription className="text-center">
-            คุณต้องการลบหอผู้ป่วย &quot;{wardName}&quot; หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+            คุณต้องการลบวอร์ดผู้ป่วย &quot;{wardName}&quot; นี้หรือไม่? การกระทำนี้ไม่สามารถแก้ไขได้
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
@@ -46,7 +46,7 @@ export function DeleteWardModal({
             variant="destructive"
             onClick={onDelete}
           >
-            ลบหอผู้ป่วย
+            ลบวอร์ด
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -6,7 +6,7 @@ import { mockGoogleUser } from './mock-data'
 
 interface AuthContextType extends AuthState {
   loginWithGoogle: () => Promise<{ isNewUser: boolean }>
-  completeRegistration: (displayName: string, hospitalId: string, hospitalName: string) => void
+  completeRegistration: (displayfirstName: string, hospitalId: string, hospitalName: string) => void
   logout: () => void
   googleEmail: string | null
   googleName: string | null

@@ -25,7 +25,7 @@ export function Header() {
         <div className="flex items-center gap-4">
           {user && (
             <span className="text-sm text-muted-foreground">
-              Welcome, <span className="font-medium text-foreground">{user.displayName}</span>
+              <span className="font-medium text-foreground">{user.displayName}</span>
             </span>
           )}
           <button

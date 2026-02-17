@@ -24,14 +24,15 @@ export default function RegisterPage() {
   const router = useRouter()
   const { isAuthenticated, googleEmail, googleName, completeRegistration } = useAuth()
 
-  const [fullName, setFullName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  //const [LastName, setLastName] = useState('')
   const [selectedHospital, setSelectedHospital] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
 
   useEffect(() => {
     if (googleName) {
-      setFullName(googleName)
+      setFirstName(googleName)
     }
   }, [googleName])
 
@@ -48,7 +49,7 @@ export default function RegisterPage() {
     }
   }, [googleEmail, isAuthenticated, router])
 
-  const isFormValid = fullName.trim() !== '' && selectedHospital !== '' && acceptedTerms && acceptedPrivacy
+  const isFormValid = firstName.trim() !== ''  && selectedHospital !== '' && acceptedTerms && acceptedPrivacy
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,7 +57,7 @@ export default function RegisterPage() {
 
     const hospital = hospitals.find(h => h.id === selectedHospital)
     if (hospital) {
-      completeRegistration(fullName, selectedHospital, hospital.name)
+      completeRegistration(firstName, selectedHospital, hospital.name)
       router.push('/home')
     }
   }
@@ -73,26 +74,23 @@ export default function RegisterPage() {
           className="mb-6 inline-flex items-center gap-2 text-sm text-sky-600 hover:underline"
         >
           <ArrowLeft className="size-4" />
-          Back to Sign In
+          ย้อนกลับ
         </Link>
 
         <div className="flex flex-col items-center gap-6">
           <WaneYenLogo size="lg" />
 
           <div className="w-full">
-            <h1 className="mb-2 text-2xl font-bold text-foreground">
-              Complete Your Profile
-            </h1>
+          
             <p className="text-muted-foreground">
-              Please fill in your details to complete registration
+              โปรดลงทะเบียนเพื่อเข้าสู่ระบบ
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="w-full space-y-5">
-            {/* Email field (read-only) */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm text-muted-foreground">
-                Email (from Google)
+                อีเมล
               </Label>
               <Input
                 id="email"
@@ -106,22 +104,23 @@ export default function RegisterPage() {
             {/* Full Name field */}
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm text-sky-600">
-                Full Name <span className="text-destructive">*</span>
+                ชื่อ-นามสกุล <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="fullName"
                 type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Enter your full name"
                 className="border-sky-300 focus-visible:border-sky-500 focus-visible:ring-sky-500/30"
               />
             </div>
 
+
             {/* Hospital Select */}
             <div className="space-y-2">
               <Label htmlFor="hospital" className="text-sm text-sky-600">
-                Hospital <span className="text-destructive">*</span>
+                โรงพยาบาล <span className="text-destructive">*</span>
               </Label>
               <Select value={selectedHospital} onValueChange={setSelectedHospital}>
                 <SelectTrigger className="w-full border-border">
@@ -139,21 +138,21 @@ export default function RegisterPage() {
 
             {/* About Roles Info Box */}
             <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <h3 className="mb-2 font-semibold text-foreground">About Roles</h3>
+              <h3 className="mb-2 font-semibold text-foreground">คำอธิบายเกี่ยวกับหน้าที่ในระบบของเรา</h3>
               <p className="mb-2 text-sm text-muted-foreground">
-                Your role is determined per ward:
+                หน้าที่ของคุณขึ้นอยู่กับวอร์ดในโรงพยาบาล:
               </p>
               <ul className="space-y-1 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <span className="text-muted-foreground">•</span>
                   <span>
-                    Create a ward → You become <strong className="text-foreground">Head Nurse</strong>
+                    ถ้าคุณเป็นผู้สร้างวอร์ดในโรงพยาบาล → คุณจะเป็น <strong className="text-foreground">หัวหน้าพยาบาล</strong>
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-muted-foreground">•</span>
                   <span>
-                    Join a ward → You become <strong className="text-foreground">Nurse</strong>
+                    หากคุณเข้าร่วมวอร์ด → คุณจะเป็น <strong className="text-foreground">พยาบาล</strong> ที่เป็นสมาชิกภายใต้วอร์ด
                   </span>
                 </li>
               </ul>
@@ -217,7 +216,7 @@ export default function RegisterPage() {
               disabled={!isFormValid}
               className="h-12 w-full bg-sky-400 text-white hover:bg-sky-500 disabled:bg-sky-300 disabled:opacity-70"
             >
-              Complete Registration
+              ยืนยันการลงทะเบียน
             </Button>
           </form>
         </div>

@@ -38,7 +38,7 @@ export function JoinWardModal({
     const result = await onJoinWard(code.toUpperCase())
 
     if (!result.success) {
-      setError(result.error || 'รหัสไม่ถูกต้อง')
+      setError(result.error || 'รหัสไม่ถูกต้อง กรุณาตรวจสอบและลองอีกครั้ง')
     }
 
     setIsLoading(false)
@@ -58,23 +58,20 @@ export function JoinWardModal({
             <KeyRound className="size-5 text-sky-500" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-foreground">เข้าร่วมหอผู้ป่วย</h2>
-            <p className="text-sm text-sky-500">{wardName}</p>
+            <h2 className="text-lg font-bold text-foreground">เข้าร่วมวอร์ด </h2>
+            <h2 className="text-sm text-sky-500">{wardName}</h2>
           </div>
         </div>
 
         <div className="py-4">
-          <label className="mb-2 block text-sm text-muted-foreground">
-            รหัสหอผู้ป่วย
-          </label>
           <Input
-            placeholder="กรอกรหัส 8 หลัก"
+            placeholder="กรอกรหัสผ่าน 8 หลัก"
             value={code}
             onChange={(e) => {
               setCode(e.target.value.toUpperCase().slice(0, 8))
               setError('')
             }}
-            className="border-sky-300 text-center text-lg tracking-wider focus-visible:ring-sky-400"
+            className="border-sky-300 text-left text-lg tracking-wider focus-visible:ring-sky-400"
             maxLength={8}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleJoin()
@@ -84,7 +81,7 @@ export function JoinWardModal({
             <p className="mt-2 text-sm text-red-500">{error}</p>
           )}
           <p className="mt-2 text-xs text-muted-foreground">
-            ขอรหัสจากหัวหน้าพยาบาลของหอผู้ป่วยนี้
+            กรุณาขอรหัสผ่านจากหัวหน้าพยาบาลที่เป็นผู้สร้างวอร์ดนี้
           </p>
         </div>
 

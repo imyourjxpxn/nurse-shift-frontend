@@ -21,9 +21,9 @@ export function WardListItem({
     <div className="flex items-center justify-between border-b border-gray-100 py-4 last:border-b-0">
       <div>
         <h3 className="font-semibold text-foreground">{ward.name}</h3>
-        <p className="text-sm text-sky-500">{ward.members.length} members</p>
+        <p className="text-sm text-sky-500">{ward.members.length} สมาชิก</p>
         <p className="text-sm text-muted-foreground">
-          Create by {ward.createdByName}
+          สร้างโดย {ward.createdByName}
         </p>
       </div>
       <div className="flex items-center gap-2">
@@ -34,7 +34,7 @@ export function WardListItem({
           onClick={() => onEnterWard(ward)}
         >
           <Users className="size-4" />
-          Enter Ward
+          เข้าสู่วอร์ด
         </Button>
         {isHeadNurse && (
           <Button

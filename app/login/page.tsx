@@ -46,7 +46,7 @@ export default function LoginPage() {
             Blessed Schedules for a Better Life
           </h1>
           <p className="text-muted-foreground">
-            Sign in with your Google account to continue
+            โปรดเข้าสู่ระบบด้วยบัญชี Google ของคุณ
           </p>
         </div>
 

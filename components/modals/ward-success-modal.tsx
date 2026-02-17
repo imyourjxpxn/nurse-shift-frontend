@@ -40,10 +40,10 @@ export function WardSuccessModal({
             <CheckCircle2 className="size-10 text-sky-500" />
           </div>
           <h2 className="mb-1 text-xl font-bold text-foreground">
-            สร้างหอผู้ป่วยสำเร็จ!
+            สร้างวอร์ดสำเร็จ!
           </h2>
           <p className="text-sm text-muted-foreground">
-            หอผู้ป่วย &quot;{wardName}&quot; ถูกสร้างเรียบร้อยแล้ว
+            วอร์ด &quot;{wardName}&quot; ถูกสร้างเรียบร้อยแล้ว
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export function WardSuccessModal({
 
         <div className="mt-2 rounded-lg bg-sky-50 p-4">
           <p className="text-sm text-sky-700">
-            <span className="font-semibold">สำคัญ:</span> แชร์รหัสนี้ให้พยาบาลที่ต้องการเข้าร่วมหอผู้ป่วย รหัสนี้สามารถดูได้ในหน้าหอผู้ป่วยของคุณ
+            <span className="font-semibold">สำคัญ:</span> แชร์รหัสผ่านนี้ให้พยาบาลที่จำเป็นต้องเข้าร่วม โดยรหัสผ่านสามารถเข้าดูได้ในหน้าวอร์ดของคุณ
           </p>
         </div>
 
@@ -93,7 +93,7 @@ export function WardSuccessModal({
             className="flex-1 bg-sky-500 text-white hover:bg-sky-600"
             onClick={onEnterWard}
           >
-            เข้าสู่หอผู้ป่วย
+            เข้าสู่วอร์ด
           </Button>
         </div>
       </DialogContent>
