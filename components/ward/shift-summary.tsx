@@ -11,9 +11,9 @@ function getShiftCounts(
   memberId: string
 ): Record<string, number> {
   const schedule = schedules.find((s) => s.memberId === memberId)
-  if (!schedule) return { ช: 0, บ: 0, ด: 0, E: 0, a: 0 }
+  if (!schedule) return { ช: 0, บ: 0, ด: 0, E: 0, ล: 0, O: 0 }
 
-  const counts: Record<string, number> = { ช: 0, บ: 0, ด: 0, E: 0, a: 0 }
+  const counts: Record<string, number> = { ช: 0, บ: 0, ด: 0, E: 0, ล: 0, O: 0 }
   for (const entry of schedule.entries) {
     if (entry.shiftCode in counts) {
       counts[entry.shiftCode]++
@@ -48,7 +48,8 @@ export function ShiftSummary({ ward }: ShiftSummaryProps) {
                 <span>เวรบ่าย : {counts['บ']}</span>
                 <span>เวรดึก : {counts['ด']}</span>
                 <span>Emergeny : {counts['E']}</span>
-                <span>ลา : {counts['a']}</span>
+                <span>ลา : {counts['ล']}</span>
+                <span>Off : {counts['O']}</span>
                 <span className="font-bold text-foreground">
                   รวม : {totalWork}
                 </span>

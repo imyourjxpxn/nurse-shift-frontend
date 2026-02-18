@@ -45,8 +45,8 @@ export default function HomePage() {
 
   const hospitalWards = getWardsByHospital(user.hospitalId)
 
-  const handleCreateWard = (name: string) => {
-    const ward = createWard(
+  const handleCreateWard = async (name: string) => {
+    const ward = await createWard(
       name,
       user.hospitalId,
       user.hospitalName,
@@ -69,7 +69,7 @@ export default function HomePage() {
   }
 
   const handleJoinWard = async (code: string) => {
-    const result = joinWard(code, user.id, user.displayName)
+    const result = await joinWard(code, user.id, user.displayName)
     if (result.success && result.ward) {
       setJoinModalOpen(false)
       router.push(`/ward/${result.ward.id}`)
@@ -82,9 +82,9 @@ export default function HomePage() {
     setDeleteModalOpen(true)
   }
 
-  const confirmDeleteWard = () => {
+  const confirmDeleteWard = async () => {
     if (selectedWard) {
-      deleteWard(selectedWard.id, user.id)
+      await deleteWard(selectedWard.id, user.id)
       setDeleteModalOpen(false)
       setSelectedWard(null)
     }

@@ -62,3 +62,10 @@ export interface AuthState {
   isLoading: boolean
   isAuthenticated: boolean
 }
+
+// Service response types for future API integration
+export interface JoinWardResult {
+  success: boolean
+  ward?: Ward
+  error?: string
+}

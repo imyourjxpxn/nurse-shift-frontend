@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { isAuthenticated, loginWithGoogle, isLoading } = useAuth()
+  const { isAuthenticated, loginWithGoogle, loginAsMockHeadNurse, isLoading } = useAuth()
   const [isSigningIn, setIsSigningIn] = useState(false)
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function LoginPage() {
             Blessed Schedules for a Better Life
           </h1>
           <p className="text-muted-foreground">
-            โปรดเข้าสู่ระบบด้วยบัญชี Google ของคุณ
+            Sign in with your Google account to continue
           </p>
         </div>
 
@@ -61,6 +61,25 @@ export default function LoginPage() {
             {isSigningIn ? 'Signing in...' : 'Continue with Google'}
           </span>
         </Button>
+
+        <div className="flex w-full max-w-sm flex-col items-center gap-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            <span>Development Only</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            variant="outline"
+            className="h-10 w-full gap-2 rounded-full border-dashed border-amber-400 text-amber-700 hover:bg-amber-50"
+            onClick={() => {
+              loginAsMockHeadNurse()
+              router.push('/home')
+            }}
+            disabled={isLoading || isSigningIn}
+          >
+            <span className="text-sm font-medium">Sign in as Head Nurse (Mock)</span>
+          </Button>
+        </div>
 
         <p className="text-center text-sm text-muted-foreground">
           By continuing, you agree to our{' '}

@@ -1,12 +1,35 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { User, AuthState } from './types'
-import { mockGoogleUser } from './mock-data'
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import {
+  loginWithGoogle as serviceLoginWithGoogle,
+  loginAsMockHeadNurse as serviceLoginAsMockHeadNurse,
+  completeRegistration as serviceCompleteRegistration,
+  persistUser,
+  getPersistedUser,
+  clearPersistedUser,
+} from '@/services/auth.service'
+
+interface User {
+  id: string
+  email: string
+  displayName: string
+  hospitalId: string
+  hospitalName: string
+  avatarUrl?: string
+  isRegistered: boolean
+}
+
+interface AuthState {
+  user: User | null
+  isLoading: boolean
+  isAuthenticated: boolean
+}
 
 interface AuthContextType extends AuthState {
   loginWithGoogle: () => Promise<{ isNewUser: boolean }>
-  completeRegistration: (displayfirstName: string, hospitalId: string, hospitalName: string) => void
+  loginAsMockHeadNurse: () => void
+  completeRegistration: (displayName: string, hospitalId: string, hospitalName: string) => void
   logout: () => void
   googleEmail: string | null
   googleName: string | null
@@ -14,64 +37,49 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const STORAGE_KEY = 'waneyen_user'
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : null
-    }
-    return null
-  })
+  const [user, setUser] = useState<User | null>(() => getPersistedUser())
   const [isLoading, setIsLoading] = useState(false)
   const [googleEmail, setGoogleEmail] = useState<string | null>(null)
   const [googleName, setGoogleName] = useState<string | null>(null)
 
   const loginWithGoogle = useCallback(async () => {
     setIsLoading(true)
-    
-    // Simulate OAuth flow delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Check if user already exists (registered)
-    const storedUser = localStorage.getItem(STORAGE_KEY)
-    
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser)
-      if (parsedUser.isRegistered) {
-        setUser(parsedUser)
-        setIsLoading(false)
-        return { isNewUser: false }
-      }
+    const result = await serviceLoginWithGoogle()
+
+    if (!result.isNewUser && result.existingUser) {
+      setUser(result.existingUser)
+      setIsLoading(false)
+      return { isNewUser: false }
     }
-    
-    // New user - store Google data for registration
-    setGoogleEmail(mockGoogleUser.email)
-    setGoogleName(mockGoogleUser.name)
+
+    setGoogleEmail(result.email)
+    setGoogleName(result.name)
     setIsLoading(false)
     return { isNewUser: true }
   }, [])
 
-  const completeRegistration = useCallback((displayName: string, hospitalId: string, hospitalName: string) => {
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      email: googleEmail || mockGoogleUser.email,
-      displayName,
-      hospitalId,
-      hospitalName,
-      isRegistered: true,
-    }
-    
-    setUser(newUser)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser))
-    setGoogleEmail(null)
-    setGoogleName(null)
-  }, [googleEmail])
+  const loginAsMockHeadNurse = useCallback(async () => {
+    const mockUser = await serviceLoginAsMockHeadNurse()
+    setUser(mockUser)
+    persistUser(mockUser)
+  }, [])
+
+  const completeRegistration = useCallback(
+    async (displayName: string, hospitalId: string, hospitalName: string) => {
+      const email = googleEmail || ''
+      const newUser = await serviceCompleteRegistration(email, displayName, hospitalId, hospitalName)
+      setUser(newUser)
+      persistUser(newUser)
+      setGoogleEmail(null)
+      setGoogleName(null)
+    },
+    [googleEmail],
+  )
 
   const logout = useCallback(() => {
     setUser(null)
-    localStorage.removeItem(STORAGE_KEY)
+    clearPersistedUser()
     setGoogleEmail(null)
     setGoogleName(null)
   }, [])
@@ -83,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user?.isRegistered,
         loginWithGoogle,
+        loginAsMockHeadNurse,
         completeRegistration,
         logout,
         googleEmail,
