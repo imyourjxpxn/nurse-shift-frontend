@@ -25,8 +25,10 @@ export interface WardMember {
 export interface ShiftConfig {
   name: string
   code: string
-  startTime: string
-  endTime: string
+  startHour: string
+  startMinute: string
+  endHour: string
+  endMinute: string
   nursesRequired: number
 }
 

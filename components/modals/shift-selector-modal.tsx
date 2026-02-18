@@ -14,7 +14,7 @@ interface ShiftSelectorModalProps {
   onOpenChange: (open: boolean) => void
   onSelect: (shiftCode: string) => void
   currentShift: string
-  shifts: { code: string; name: string; startTime: string; endTime: string }[]
+  shifts: { code: string; name: string; startHour: string; startMinute: string; endHour: string; endMinute: string }[]
 }
 
 const shiftBadgeColors: Record<string, string> = {
@@ -52,8 +52,10 @@ export function ShiftSelectorModal({
 
   const displayShifts = allShifts.map((s) => {
     const match = shifts.find((sh) => sh.code === s.code)
-    if (match && match.startTime && match.endTime) {
-      return { ...s, sub: `${match.startTime}-${match.endTime}` }
+    if (match && match.startHour && match.endHour) {
+      const startStr = `${match.startHour.padStart(2, '0')}.${(match.startMinute || '00').padStart(2, '0')}`
+      const endStr = `${match.endHour.padStart(2, '0')}.${(match.endMinute || '00').padStart(2, '0')}`
+      return { ...s, sub: `${startStr}-${endStr}` }
     }
     return s
   })

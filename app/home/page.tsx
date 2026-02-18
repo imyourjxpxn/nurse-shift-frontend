@@ -16,7 +16,7 @@ import type { Ward } from '@/lib/types'
 export default function HomePage() {
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
-  const { createWard, joinWard, deleteWard, getWardsByHospital, getUserRole } =
+  const { createWard, joinWard, deleteWard, getWardsByHospital, getUserRole, ensureUserInMockWard } =
     useWard()
 
   const [createModalOpen, setCreateModalOpen] = useState(false)
@@ -31,6 +31,13 @@ export default function HomePage() {
       router.replace('/login')
     }
   }, [isAuthenticated, router])
+
+  // Ensure current user is added to mock MED ward for demo purposes
+  useEffect(() => {
+    if (user) {
+      ensureUserInMockWard(user.id, user.displayName, user.hospitalId)
+    }
+  }, [user, ensureUserInMockWard])
 
   if (!isAuthenticated || !user) {
     return null
