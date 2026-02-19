@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { WaneYenLogo } from '@/components/waneyen-logo'
+import { LegalContentModal } from '@/components/modals/legal-content-modal'
+import { TermsOfServiceContent, PrivacyPolicyContent } from '@/components/legal-content'
 import { useAuth } from '@/lib/auth-context'
 import { getHospitals } from '@/services/hospital.service'
 
@@ -29,6 +31,8 @@ export default function RegisterPage() {
   const [selectedHospital, setSelectedHospital] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
+  const [termsModalOpen, setTermsModalOpen] = useState(false)
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false)
 
   useEffect(() => {
     getHospitals().then(setHospitals)
@@ -164,57 +168,69 @@ export default function RegisterPage() {
               </ul>
             </div>
 
-            {/* Terms Checkbox */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setAcceptedTerms(!acceptedTerms)}
+            {/* Terms Checkbox -- opens modal, cannot toggle directly */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!acceptedTerms) setTermsModalOpen(true)
+              }}
+              className="flex w-full items-center gap-3 rounded-lg border border-transparent px-1 py-1 text-left transition-colors hover:bg-muted/40"
+            >
+              <span
                 className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                   acceptedTerms
                     ? 'border-sky-500 bg-sky-500'
                     : 'border-muted-foreground/50 bg-background'
                 }`}
-                aria-label="Accept Terms of Service"
+                aria-hidden="true"
               >
                 {acceptedTerms && (
                   <svg className="size-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 )}
-              </button>
-              <span className="text-sm text-muted-foreground">
-                I accept the{' '}
-                <a href="#" className="text-sky-600 hover:underline">
-                  Terms of Service
-                </a>
               </span>
-            </div>
+              <span className="text-sm text-muted-foreground">
+                {'I agree to '}
+                <span className="text-sky-600 underline">Terms of Service</span>
+                {acceptedTerms
+                  ? <span className="ml-1 text-xs text-green-600 font-medium">(Accepted)</span>
+                  : <span className="ml-1 text-xs text-destructive font-medium">(Required)</span>
+                }
+              </span>
+            </button>
 
-            {/* Privacy Checkbox */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setAcceptedPrivacy(!acceptedPrivacy)}
+            {/* Privacy Checkbox -- opens modal, cannot toggle directly */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!acceptedPrivacy) setPrivacyModalOpen(true)
+              }}
+              className="flex w-full items-center gap-3 rounded-lg border border-transparent px-1 py-1 text-left transition-colors hover:bg-muted/40"
+            >
+              <span
                 className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                   acceptedPrivacy
                     ? 'border-sky-500 bg-sky-500'
                     : 'border-muted-foreground/50 bg-background'
                 }`}
-                aria-label="Accept Privacy Policy"
+                aria-hidden="true"
               >
                 {acceptedPrivacy && (
                   <svg className="size-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 )}
-              </button>
-              <span className="text-sm text-muted-foreground">
-                I accept the{' '}
-                <a href="#" className="text-sky-600 hover:underline">
-                  Privacy Policy (PDPA)
-                </a>
               </span>
-            </div>
+              <span className="text-sm text-muted-foreground">
+                {'I acknowledge '}
+                <span className="text-sky-600 underline">Privacy Policy (PDPA)</span>
+                {acceptedPrivacy
+                  ? <span className="ml-1 text-xs text-green-600 font-medium">(Accepted)</span>
+                  : <span className="ml-1 text-xs text-destructive font-medium">(Required)</span>
+                }
+              </span>
+            </button>
 
             {/* Submit Button */}
             <Button
@@ -227,6 +243,26 @@ export default function RegisterPage() {
           </form>
         </div>
       </div>
+
+      {/* Terms of Service modal */}
+      <LegalContentModal
+        open={termsModalOpen}
+        onOpenChange={setTermsModalOpen}
+        title="Terms of Service"
+        onAccept={() => setAcceptedTerms(true)}
+      >
+        <TermsOfServiceContent />
+      </LegalContentModal>
+
+      {/* Privacy Policy modal */}
+      <LegalContentModal
+        open={privacyModalOpen}
+        onOpenChange={setPrivacyModalOpen}
+        title="Privacy Policy (PDPA)"
+        onAccept={() => setAcceptedPrivacy(true)}
+      >
+        <PrivacyPolicyContent />
+      </LegalContentModal>
     </main>
   )
 }

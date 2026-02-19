@@ -100,16 +100,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-muted-foreground">
-          By continuing, you agree to our{' '}
-          <a href="#" className="text-sky-600 hover:underline">
-            Terms of Service
-          </a>{' '}
-          and{' '}
-          <a href="#" className="text-sky-600 hover:underline">
-            Privacy Policy
-          </a>
-        </p>
+
       </div>
     </main>
   )
