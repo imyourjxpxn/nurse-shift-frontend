@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useWard } from '@/lib/ward-context'
 import { useUnsavedChanges } from './use-unsaved-changes'
 import type { ShiftConfig, NurseSchedule, Ward } from '@/lib/types'
 import { createSwapRequest, getPendingSwapCells, approveSwapRequest, cancelPendingSwapsForMember } from '@/services/swap.service'
+import { validateSchedule, type ValidationIssue } from '@/lib/schedule-validator'
 
 export function useWardPage() {
   const routeParams = useParams<{ id: string }>()
@@ -60,6 +61,21 @@ export function useWardPage() {
     currentShift: string
   } | null>(null)
 
+  // Validation warnings -- per month/year cache
+  // null = never validated for this month, [] = validated with 0 warnings
+  const warningCacheRef = useRef<Map<string, ValidationIssue[]>>(new Map())
+  const currentMonthKey = ward ? `${ward.month}-${ward.year}` : ''
+  const [validationWarnings, setValidationWarnings] = useState<ValidationIssue[] | null>(null)
+  const [validationPanelOpen, setValidationPanelOpen] = useState(false)
+
+  // Restore cached warnings when month/year changes (null if never validated)
+  useEffect(() => {
+    if (!currentMonthKey) return
+    const cached = warningCacheRef.current.get(currentMonthKey)
+    setValidationWarnings(cached ?? null)
+    setValidationPanelOpen(false)
+  }, [currentMonthKey])
+
   // Remove member confirmation
   const [removeMemberTarget, setRemoveMemberTarget] = useState<{ id: string; name: string } | null>(null)
 
@@ -81,6 +97,15 @@ export function useWardPage() {
   // --- Actions ---
   const handleSave = useCallback(() => {
     if (!ward || !draftShifts || !draftSchedules) return
+
+    // Run validation (warnings only, never blocks save)
+    const wardForValidation = { ...ward, shifts: draftShifts, schedules: draftSchedules }
+    const warnings = validateSchedule(wardForValidation)
+    setValidationWarnings(warnings)
+    // Store in per-month cache
+    warningCacheRef.current.set(`${ward.month}-${ward.year}`, warnings)
+
+    // Proceed with save regardless of warnings
     updateShiftConfig(ward.id, draftShifts)
     clearSchedule(ward.id)
     for (const schedule of draftSchedules) {
@@ -323,6 +348,11 @@ export function useWardPage() {
 
     // Unsaved changes
     hasUnsavedChanges,
+
+    // Validation
+    validationWarnings,
+    validationPanelOpen,
+    setValidationPanelOpen,
 
     // Code visibility
     showCode,

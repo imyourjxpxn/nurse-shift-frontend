@@ -4,7 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: 'Comfortaa', 'Comfortaa Fallback';
   --font-mono: 'Roboto Mono', 'Roboto Mono Fallback';
+  --font-serif: 'Source Serif 4', 'Source Serif 4 Fallback';
   --color-background: #ffffff;
   --color-foreground: #0a0a0a;
   --color-card: #ffffff;

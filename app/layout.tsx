@@ -1,16 +1,21 @@
 import React from "react"
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+
 import { AuthProvider } from '@/lib/auth-context'
 import { WardProvider } from '@/lib/ward-context'
 import './globals.css'
 
-const _geist = Geist({ subsets: ['latin'] })
-const _geistMono = Geist_Mono({ subsets: ['latin'] })
+import { Comfortaa as V0_Font_Comfortaa, Roboto_Mono as V0_Font_Roboto_Mono, Source_Serif_4 as V0_Font_Source_Serif_4 } from 'next/font/google'
+
+// Initialize fonts
+const _comfortaa = V0_Font_Comfortaa({ subsets: ['latin'], weight: ["300","400","500","600","700"] })
+const _robotoMono = V0_Font_Roboto_Mono({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700"] })
+const _sourceSerif_4 = V0_Font_Source_Serif_4({ subsets: ['latin'], weight: ["200","300","400","500","600","700","800","900"] })
 
 export const metadata: Metadata = {
   title: 'WaneYen - Nurse Scheduling System',
   description: 'Blessed Schedules for a Better Life - A modern nurse scheduling system',
+  generator: 'v0.app',
   icons: {
     icon: [
       {
