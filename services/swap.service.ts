@@ -111,6 +111,25 @@ export async function cancelSwapRequest(
   return request
 }
 
+/** Cancel all PENDING swap requests involving a specific member (used when removing a member) */
+export async function cancelPendingSwapsForMember(
+  wardId: string,
+  memberId: string,
+): Promise<number> {
+  let count = 0
+  for (const r of mockSwapRequests) {
+    if (
+      r.wardId === wardId &&
+      r.status === 'pending' &&
+      (r.fromNurseId === memberId || r.toNurseId === memberId)
+    ) {
+      r.status = 'cancelled'
+      count++
+    }
+  }
+  return count
+}
+
 /** Locked cells for pending swaps */
 export interface LockedCell {
   memberId: string

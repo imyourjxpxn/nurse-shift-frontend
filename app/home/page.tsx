@@ -43,6 +43,7 @@ export default function HomePage() {
     return null
   }
 
+  // Show ALL wards in user's hospital (card stays visible even if not a member)
   const hospitalWards = getWardsByHospital(user.hospitalId)
 
   const handleCreateWard = async (name: string) => {
@@ -59,10 +60,12 @@ export default function HomePage() {
   }
 
   const handleEnterWard = (ward: Ward) => {
-    const role = getUserRole(ward.id, user.id)
-    if (role) {
+    // Check membership using ONLY the current ward.members array
+    const isMember = ward.members.some((m) => m.userId === user.id)
+    if (isMember) {
       router.push(`/ward/${ward.id}`)
     } else {
+      // Non-member: redirect to join ward flow (enter ward code)
       setSelectedWard(ward)
       setJoinModalOpen(true)
     }
@@ -134,20 +137,21 @@ export default function HomePage() {
       )}
 
       {selectedWard && (
-        <>
-          <JoinWardModal
-            open={joinModalOpen}
-            onOpenChange={setJoinModalOpen}
-            wardName={selectedWard.name}
-            onJoinWard={handleJoinWard}
-          />
-          <DeleteWardModal
-            open={deleteModalOpen}
-            onOpenChange={setDeleteModalOpen}
-            wardName={selectedWard.name}
-            onDelete={confirmDeleteWard}
-          />
-        </>
+        <JoinWardModal
+          open={joinModalOpen}
+          onOpenChange={setJoinModalOpen}
+          wardName={selectedWard.name}
+          onJoinWard={handleJoinWard}
+        />
+      )}
+
+      {selectedWard && (
+        <DeleteWardModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          wardName={selectedWard.name}
+          onDelete={confirmDeleteWard}
+        />
       )}
     </div>
   )

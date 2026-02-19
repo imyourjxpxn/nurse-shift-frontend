@@ -14,6 +14,7 @@ import {
   joinWard as serviceJoinWard,
   deleteWard as serviceDeleteWard,
   renameWard as serviceRenameWard,
+  removeMember as serviceRemoveMember,
   updateWardMonthYear as serviceUpdateWardMonthYear,
   updateShiftConfig as serviceUpdateShiftConfig,
   updateSchedule as serviceUpdateSchedule,
@@ -43,6 +44,7 @@ interface WardContextType {
   joinWard: (code: string, userId: string, userName: string) => Promise<JoinWardResult>
   deleteWard: (wardId: string, userId: string) => Promise<boolean>
   renameWard: (wardId: string, userId: string, newName: string) => Promise<boolean>
+  removeMember: (wardId: string, requesterId: string, memberId: string) => Promise<boolean>
   getWardsByHospital: (hospitalId: string) => Ward[]
   getWardById: (wardId: string) => Ward | undefined
   getUserRole: (wardId: string, userId: string) => 'head_nurse' | 'nurse' | null
@@ -115,6 +117,15 @@ export function WardProvider({ children }: { children: ReactNode }) {
   const renameWard = useCallback(
     async (wardId: string, userId: string, newName: string): Promise<boolean> => {
       const ok = await serviceRenameWard(wardId, userId, newName)
+      if (ok) refreshWards()
+      return ok
+    },
+    [refreshWards],
+  )
+
+  const removeMember = useCallback(
+    async (wardId: string, requesterId: string, memberId: string): Promise<boolean> => {
+      const ok = await serviceRemoveMember(wardId, requesterId, memberId)
       if (ok) refreshWards()
       return ok
     },
@@ -205,6 +216,7 @@ export function WardProvider({ children }: { children: ReactNode }) {
         joinWard,
         deleteWard,
         renameWard,
+        removeMember,
         getWardsByHospital,
         getWardById,
         getUserRole,

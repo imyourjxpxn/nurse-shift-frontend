@@ -62,6 +62,11 @@ export default function WardPage() {
     handleRenameWard,
     handleDeleteWard,
 
+    // Remove member
+    removeMemberTarget,
+    setRemoveMemberTarget,
+    handleRemoveMember,
+
     // Swap modals
     createSwapOpen,
     setCreateSwapOpen,
@@ -174,7 +179,9 @@ export default function WardPage() {
         <ScheduleGrid
           ward={displayWard}
           isHeadNurse={isHeadNurse}
+          isCreator={isCreator}
           onCellClick={handleNurseCellClick}
+          onRemoveMember={(memberId, memberName) => setRemoveMemberTarget({ id: memberId, name: memberName })}
         />
 
         <ShiftSummary ward={displayWard} />
@@ -264,6 +271,39 @@ export default function WardPage() {
         year={ward.year}
       />
 
+      {/* Remove member confirmation */}
+      <AlertDialog open={!!removeMemberTarget} onOpenChange={(open) => !open && setRemoveMemberTarget(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Member</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  {'Are you sure you want to remove '}
+                  <span className="font-semibold text-foreground">{removeMemberTarget?.name}</span>
+                  {' from this ward?'}
+                </p>
+                <p>This will remove them from the schedule and cancel all their pending swap requests. Approved and rejected swap history will be preserved.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogAction
+              onClick={() => setRemoveMemberTarget(null)}
+              className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            >
+              Cancel
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleRemoveMember}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Pending swap popup */}
       <AlertDialog open={!!pendingSwapPopup} onOpenChange={(open) => !open && setPendingSwapPopup(null)}>
         <AlertDialogContent className="sm:max-w-md">
@@ -292,4 +332,5 @@ export default function WardPage() {
     </div>
   )
 }
+
 

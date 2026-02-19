@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useWard } from '@/lib/ward-context'
 import { useUnsavedChanges } from './use-unsaved-changes'
 import type { ShiftConfig, NurseSchedule, Ward } from '@/lib/types'
-import { createSwapRequest, getPendingSwapCells, approveSwapRequest } from '@/services/swap.service'
+import { createSwapRequest, getPendingSwapCells, approveSwapRequest, cancelPendingSwapsForMember } from '@/services/swap.service'
 
 export function useWardPage() {
   const routeParams = useParams<{ id: string }>()
@@ -22,6 +22,7 @@ export function useWardPage() {
     clearSchedule,
     deleteWard,
     renameWard,
+    removeMember,
     updateWardMonthYear,
     applySwapToSchedule,
   } = useWard()
@@ -58,6 +59,9 @@ export function useWardPage() {
     date: number
     currentShift: string
   } | null>(null)
+
+  // Remove member confirmation
+  const [removeMemberTarget, setRemoveMemberTarget] = useState<{ id: string; name: string } | null>(null)
 
   // Swap modals
   const [createSwapOpen, setCreateSwapOpen] = useState(false)
@@ -212,6 +216,18 @@ export function useWardPage() {
     [ward, user, renameWard],
   )
 
+  const handleRemoveMember = useCallback(
+    async () => {
+      if (!ward || !user || !removeMemberTarget) return
+      // Cancel all pending swaps involving this member
+      await cancelPendingSwapsForMember(ward.id, removeMemberTarget.id)
+      // Remove from ward
+      await removeMember(ward.id, user.id, removeMemberTarget.id)
+      setRemoveMemberTarget(null)
+    },
+    [ward, user, removeMemberTarget, removeMember],
+  )
+
   const handleDeleteWard = useCallback(() => {
     if (!ward || !user) return
     deleteWard(ward.id, user.id)
@@ -335,6 +351,11 @@ export function useWardPage() {
     handleYearChange,
     handleRenameWard,
     handleDeleteWard,
+
+    // Remove member
+    removeMemberTarget,
+    setRemoveMemberTarget,
+    handleRemoveMember,
 
     // Swap modals
     createSwapOpen,

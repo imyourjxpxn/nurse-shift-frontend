@@ -5,7 +5,9 @@ import type { Ward, NurseSchedule } from '@/lib/types'
 interface ScheduleGridProps {
   ward: Ward
   isHeadNurse: boolean
+  isCreator?: boolean
   onCellClick: (memberId: string, date: number, currentShift: string) => void
+  onRemoveMember?: (memberId: string, memberName: string) => void
 }
 
 const shiftCellColors: Record<string, string> = {
@@ -56,7 +58,7 @@ const thaiMonthsShort = [
   'ธ.ค.',
 ]
 
-export function ScheduleGrid({ ward, isHeadNurse, onCellClick }: ScheduleGridProps) {
+export function ScheduleGrid({ ward, isHeadNurse, isCreator, onCellClick, onRemoveMember }: ScheduleGridProps) {
   const daysInMonth = getDaysInMonth(ward.month, ward.year)
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
   const monthLabel = thaiMonthsShort[ward.month - 1] || ''
@@ -128,14 +130,31 @@ export function ScheduleGrid({ ward, isHeadNurse, onCellClick }: ScheduleGridPro
                     <td
                       className={`sticky left-0 z-10 px-3 py-2.5 text-sm font-medium ${rowBg}`}
                     >
-                      <span
-                        className={
-                          member.role === 'head_nurse'
-                            ? 'text-sky-600 font-semibold'
-                            : 'text-foreground'
-                        }
-                      >
-                        {member.name}
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className={
+                            member.role === 'head_nurse'
+                              ? 'text-sky-600 font-semibold'
+                              : 'text-foreground'
+                          }
+                        >
+                          {member.name}
+                        </span>
+                        {isCreator && member.role !== 'head_nurse' && onRemoveMember && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onRemoveMember(member.id, member.name)
+                            }}
+                            className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:bg-red-100 hover:text-red-600"
+                            aria-label={`Remove ${member.name}`}
+                          >
+                            <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
                       </span>
                     </td>
 

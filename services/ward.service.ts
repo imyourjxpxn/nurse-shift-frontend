@@ -27,6 +27,11 @@ function setWards(wards: Ward[]): void {
 }
 
 // ---------------------------------------------------------------------------
+// Track users who have been removed from wards (to prevent re-adding via mock seeding)
+// ---------------------------------------------------------------------------
+const removedUsersByWard = new Map<string, Set<string>>()
+
+// ---------------------------------------------------------------------------
 // Per-month data cache
 // Stores schedules + shifts for each ward+month+year combo so switching
 // months preserves data and members stay constant.
@@ -165,6 +170,54 @@ export async function renameWard(wardId: string, userId: string, newName: string
   return true
 }
 
+/** Remove a member from a ward. Only the creator (head nurse) can do this.
+ *  Also removes the member's schedule data from the current month and all cached snapshots. */
+export async function removeMember(
+  wardId: string,
+  requesterId: string,
+  memberId: string,
+): Promise<boolean> {
+  const wards = getWards()
+  const ward = wards.find((w) => w.id === wardId)
+  if (!ward) return false
+
+  // Only the ward creator can remove members
+  if (ward.createdById !== requesterId) return false
+  const requester = ward.members.find((m) => m.userId === requesterId)
+  if (!requester || requester.role !== 'head_nurse') return false
+
+  // Cannot remove self (the creator)
+  const target = ward.members.find((m) => m.id === memberId)
+  if (!target) return false
+  if (target.userId === requesterId) return false
+
+  // Track this user as removed so mock seeding won't re-add them
+  if (!removedUsersByWard.has(wardId)) {
+    removedUsersByWard.set(wardId, new Set())
+  }
+  removedUsersByWard.get(wardId)!.add(target.userId)
+
+  // Remove member from the ward
+  const updatedWard = {
+    ...ward,
+    members: ward.members.filter((m) => m.id !== memberId),
+    schedules: ward.schedules.filter((s) => s.memberId !== memberId),
+  }
+  setWards(wards.map((w) => (w.id === wardId ? updatedWard : w)))
+
+  // Also clean the member from ALL cached month snapshots for this ward
+  for (const [key, snapshot] of monthDataStore.entries()) {
+    if (key.startsWith(`${wardId}-`)) {
+      monthDataStore.set(key, {
+        ...snapshot,
+        schedules: snapshot.schedules.filter((s) => s.memberId !== memberId),
+      })
+    }
+  }
+
+  return true
+}
+
 export async function deleteWard(wardId: string, userId: string): Promise<boolean> {
   await new Promise((r) => setTimeout(r, 200))
 
@@ -288,6 +341,11 @@ export async function ensureUserInMockWard(
   hospitalId: string,
 ): Promise<void> {
   if (hospitalId !== '1') return
+
+  // Do NOT re-add users who were explicitly removed from this ward
+  const removedUsers = removedUsersByWard.get(MOCK_WARD_ID)
+  if (removedUsers?.has(userId)) return
+
   const wards = getWards()
   setWards(
     wards.map((w) => {
