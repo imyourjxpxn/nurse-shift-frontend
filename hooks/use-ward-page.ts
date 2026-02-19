@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useWard } from '@/lib/ward-context'
 import { useUnsavedChanges } from './use-unsaved-changes'
 import type { ShiftConfig, NurseSchedule, Ward } from '@/lib/types'
 import { createSwapRequest, getPendingSwapCells, approveSwapRequest } from '@/services/swap.service'
-import type { LockedCell } from '@/services/swap.service'
 
 export function useWardPage() {
   const routeParams = useParams<{ id: string }>()
@@ -61,20 +60,13 @@ export function useWardPage() {
   const [createSwapOpen, setCreateSwapOpen] = useState(false)
   const [mySwapRequestsOpen, setMySwapRequestsOpen] = useState(false)
   const [approveSwapOpen, setApproveSwapOpen] = useState(false)
+  const [swapHistoryOpen, setSwapHistoryOpen] = useState(false)
   const [swapValidationMsg, setSwapValidationMsg] = useState<string | null>(null)
   // Pre-filled cell info for create-swap modal
   const [swapCellInfo, setSwapCellInfo] = useState<{ date: number; shift: string } | null>(null)
 
-  // Locked cells from pending swap requests
-  const [lockedCells, setLockedCells] = useState<LockedCell[]>([])
-  const [lockedCellPopup, setLockedCellPopup] = useState<LockedCell | null>(null)
-
-  // Load locked cells whenever ward or its schedule changes
-  useEffect(() => {
-    if (ward) {
-      getPendingSwapCells(ward.id, ward.month, ward.year).then(setLockedCells)
-    }
-  }, [ward])
+  // Pending swap popup (shown when nurse tries to create swap on a cell with pending request)
+  const [pendingSwapPopup, setPendingSwapPopup] = useState<{ fromNurseName: string; toNurseName: string } | null>(null)
 
   // Find current user's member record in the ward
   const currentMember = ward?.members.find((m) => m.userId === user?.id) ?? null
@@ -202,9 +194,8 @@ export function useWardPage() {
 
   // --- Nurse: cell click opens create-swap modal ---
   const handleNurseCellClick = useCallback(
-    (memberId: string, date: number, currentShift: string) => {
+    async (memberId: string, date: number, currentShift: string) => {
       if (isHeadNurse) {
-        // Head nurse uses the shift selector
         handleCellClick(memberId, date, currentShift)
         return
       }
@@ -216,20 +207,23 @@ export function useWardPage() {
         return
       }
 
-      // Check if cell is locked by a pending swap
-      const locked = lockedCells.find(
-        (c) => c.memberId === currentMember.id && c.date === date,
-      )
-      if (locked) {
-        setLockedCellPopup(locked)
-        return
+      // Check if this cell is involved in a pending swap request
+      if (ward) {
+        const pendingCells = await getPendingSwapCells(ward.id, ward.month, ward.year)
+        const pending = pendingCells.find(
+          (c) => c.memberId === currentMember.id && c.date === date,
+        )
+        if (pending) {
+          setPendingSwapPopup({ fromNurseName: pending.fromNurseName, toNurseName: pending.toNurseName })
+          return
+        }
       }
 
       // Store clicked cell info for auto-mapping
       setSwapCellInfo({ date, shift: currentShift })
       setCreateSwapOpen(true)
     },
-    [isHeadNurse, handleCellClick, currentMember, lockedCells],
+    [isHeadNurse, handleCellClick, currentMember, ward],
   )
 
   const handleSwapSubmit = useCallback(
@@ -258,26 +252,15 @@ export function useWardPage() {
         year: ward.year,
       })
       setCreateSwapOpen(false)
-      // Refresh locked cells
-      if (ward) {
-        getPendingSwapCells(ward.id, ward.month, ward.year).then(setLockedCells)
-      }
     },
     [ward, currentMember],
   )
-
-  const handleLockedCellClick = useCallback((info: LockedCell) => {
-    setLockedCellPopup(info)
-  }, [])
 
   const handleApproveSwap = useCallback(
     async (requestId: string, fromNurseId: string, toNurseId: string, fromDate: number, toDate: number, fromShiftCode: string, toShiftCode: string) => {
       if (!ward) return
       await approveSwapRequest(requestId)
       await applySwapToSchedule(ward.id, fromNurseId, toNurseId, fromDate, toDate, fromShiftCode, toShiftCode)
-      // Refresh locked cells
-      const cells = await getPendingSwapCells(ward.id, ward.month, ward.year)
-      setLockedCells(cells)
     },
     [ward, applySwapToSchedule],
   )
@@ -334,11 +317,11 @@ export function useWardPage() {
     handleSwapSubmit,
     swapValidationMsg,
     swapCellInfo,
-    lockedCells,
-    lockedCellPopup,
-    setLockedCellPopup,
-    handleLockedCellClick,
+    pendingSwapPopup,
+    setPendingSwapPopup,
     handleApproveSwap,
+    swapHistoryOpen,
+    setSwapHistoryOpen,
 
     // Navigation
     router,

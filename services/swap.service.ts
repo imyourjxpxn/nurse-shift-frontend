@@ -23,11 +23,21 @@ export async function getIncomingSwapRequests(
   )
 }
 
-/** Get ALL swap requests in a ward */
-export async function getAllSwapRequests(
-  wardId: string,
-): Promise<SwapRequest[]> {
+
+/** Get ALL swap requests in a ward (for head nurse swap history) */
+export async function getAllSwapRequests(wardId: string): Promise<SwapRequest[]> {
   return mockSwapRequests.filter((r) => r.wardId === wardId)
+}
+
+/** Get approved swap requests for a ward+month (for history log) sorted latest first */
+export async function getApprovedSwapRequests(
+  wardId: string,
+  month: number,
+  year: number,
+): Promise<SwapRequest[]> {
+  return mockSwapRequests
+    .filter((r) => r.wardId === wardId && r.month === month && r.year === year && r.status === 'approved')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 }
 
 /** Create a new swap request */

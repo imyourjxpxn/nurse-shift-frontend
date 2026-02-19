@@ -15,6 +15,8 @@ import { UnsavedChangesModal } from '@/components/modals/unsaved-changes-modal'
 import { CreateSwapRequestModal } from '@/components/modals/create-swap-request-modal'
 import { MySwapRequestsModal } from '@/components/ward/my-swap-requests'
 import { ApproveSwapRequestsModal } from '@/components/ward/approve-swap-requests'
+import { SwapHistoryModal } from '@/components/modals/swap-history-modal'
+
 import {
   AlertDialog,
   AlertDialogContent,
@@ -68,11 +70,11 @@ export default function WardPage() {
     handleSwapSubmit,
     swapValidationMsg,
     swapCellInfo,
-    lockedCells,
-    lockedCellPopup,
-    setLockedCellPopup,
-    handleLockedCellClick,
+    pendingSwapPopup,
+    setPendingSwapPopup,
     handleApproveSwap,
+    swapHistoryOpen,
+    setSwapHistoryOpen,
 
     router,
   } = useWardPage()
@@ -129,7 +131,7 @@ export default function WardPage() {
           {isHeadNurse ? (
             <HeadNurseToolbar
               hasUnsavedChanges={hasUnsavedChanges}
-              onSwapHistory={() => alert('Swap history coming soon')}
+              onSwapHistory={() => setSwapHistoryOpen(true)}
               onClear={handleClear}
               onExport={() => alert('Export functionality coming soon')}
               onSave={handleSave}
@@ -162,8 +164,6 @@ export default function WardPage() {
           ward={displayWard}
           isHeadNurse={isHeadNurse}
           onCellClick={handleNurseCellClick}
-          lockedCells={lockedCells}
-          onLockedCellClick={handleLockedCellClick}
         />
 
         <ShiftSummary ward={displayWard} />
@@ -220,7 +220,6 @@ export default function WardPage() {
             year={ward.year}
             initialDate={swapCellInfo?.date}
             initialShift={swapCellInfo?.shift}
-            lockedCells={lockedCells}
           />
 
           <MySwapRequestsModal
@@ -244,8 +243,18 @@ export default function WardPage() {
         </>
       )}
 
-      {/* Locked cell popup */}
-      <AlertDialog open={!!lockedCellPopup} onOpenChange={(open) => !open && setLockedCellPopup(null)}>
+      {/* Swap History sidebar (head nurse only) */}
+      <SwapHistoryModal
+        open={swapHistoryOpen}
+        onOpenChange={setSwapHistoryOpen}
+        wardId={ward.id}
+        currentMemberId={currentMember?.id}
+        month={ward.month}
+        year={ward.year}
+      />
+
+      {/* Pending swap popup */}
+      <AlertDialog open={!!pendingSwapPopup} onOpenChange={(open) => !open && setPendingSwapPopup(null)}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Swap Request in Progress</AlertDialogTitle>
@@ -253,9 +262,9 @@ export default function WardPage() {
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
                   {'This shift is currently involved in a pending swap request between '}
-                  <span className="font-semibold text-foreground">{lockedCellPopup?.fromNurseName}</span>
+                  <span className="font-semibold text-foreground">{pendingSwapPopup?.fromNurseName}</span>
                   {' and '}
-                  <span className="font-semibold text-foreground">{lockedCellPopup?.toNurseName}</span>
+                  <span className="font-semibold text-foreground">{pendingSwapPopup?.toNurseName}</span>
                   {'.'}
                 </p>
                 <p>Approval is in progress. You cannot create another request.</p>
@@ -263,7 +272,7 @@ export default function WardPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setLockedCellPopup(null)}>
+            <AlertDialogAction onClick={() => setPendingSwapPopup(null)}>
               OK
             </AlertDialogAction>
           </AlertDialogFooter>
