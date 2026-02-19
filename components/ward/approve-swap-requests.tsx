@@ -76,11 +76,11 @@ export function ApproveSwapRequestsModal({
   const [requests, setRequests] = useState<SwapRequest[]>([])
 
   const loadRequests = useCallback(async () => {
-    const data = await getIncomingSwapRequests(wardId, memberId)
+    const data = await getIncomingSwapRequests(wardId, memberId, month, year)
     // Sort latest first
     data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     setRequests(data)
-  }, [wardId, memberId])
+  }, [wardId, memberId, month, year])
 
   useEffect(() => {
     if (open) loadRequests()

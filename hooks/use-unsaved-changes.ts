@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import type { ShiftConfig, NurseSchedule } from '@/lib/types'
 
 function deepEqual(a: unknown, b: unknown): boolean {
@@ -10,24 +10,25 @@ function deepEqual(a: unknown, b: unknown): boolean {
 export function useUnsavedChanges(
   initialShifts: ShiftConfig[] | undefined,
   initialSchedules: NurseSchedule[] | undefined,
-  isHeadNurse: boolean
+  isHeadNurse: boolean,
+  /** Pass month+year so drafts re-sync when the user switches month */
+  month?: number,
+  year?: number,
 ) {
   const [draftShifts, setDraftShifts] = useState<ShiftConfig[] | null>(null)
-  const [draftSchedules, setDraftSchedules] = useState<NurseSchedule[] | null>(
-    null
-  )
+  const [draftSchedules, setDraftSchedules] = useState<NurseSchedule[] | null>(null)
   const savedShiftsRef = useRef<ShiftConfig[] | null>(null)
   const savedSchedulesRef = useRef<NurseSchedule[] | null>(null)
-  const initialized = useRef(false)
 
-  // Initialize draft state from ward data (call once when ward loads)
-  if (initialShifts && initialSchedules && !initialized.current) {
-    setDraftShifts(initialShifts)
-    setDraftSchedules(initialSchedules)
-    savedShiftsRef.current = initialShifts
-    savedSchedulesRef.current = initialSchedules
-    initialized.current = true
-  }
+  // Re-sync drafts whenever the source ward data changes (month switch, initial load, save)
+  useEffect(() => {
+    if (initialShifts && initialSchedules) {
+      setDraftShifts(initialShifts)
+      setDraftSchedules(initialSchedules)
+      savedShiftsRef.current = initialShifts
+      savedSchedulesRef.current = initialSchedules
+    }
+  }, [initialShifts, initialSchedules, month, year])
 
   const hasUnsavedChanges =
     isHeadNurse &&

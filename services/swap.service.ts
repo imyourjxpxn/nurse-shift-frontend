@@ -1,25 +1,35 @@
 import { mockSwapRequests, SwapRequest } from '@/mocks/swapRequests'
 
-/** Get swap requests sent BY a specific nurse */
+/** Get swap requests sent BY a specific nurse, scoped by month+year */
 export async function getMySwapRequests(
   wardId: string,
   memberId: string,
+  month?: number,
+  year?: number,
 ): Promise<SwapRequest[]> {
   return mockSwapRequests.filter(
-    (r) => r.wardId === wardId && r.fromNurseId === memberId,
+    (r) =>
+      r.wardId === wardId &&
+      r.fromNurseId === memberId &&
+      (month === undefined || r.month === month) &&
+      (year === undefined || r.year === year),
   )
 }
 
-/** Get incoming swap requests FOR a specific nurse (pending only for approve view) */
+/** Get incoming swap requests FOR a specific nurse (pending only for approve view), scoped by month+year */
 export async function getIncomingSwapRequests(
   wardId: string,
   memberId: string,
+  month?: number,
+  year?: number,
 ): Promise<SwapRequest[]> {
   return mockSwapRequests.filter(
     (r) =>
       r.wardId === wardId &&
       r.toNurseId === memberId &&
-      r.status === 'pending',
+      r.status === 'pending' &&
+      (month === undefined || r.month === month) &&
+      (year === undefined || r.year === year),
   )
 }
 

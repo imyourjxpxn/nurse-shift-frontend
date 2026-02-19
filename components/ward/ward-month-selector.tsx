@@ -11,6 +11,8 @@ import {
 interface WardMonthSelectorProps {
   month: number
   year: number
+  onMonthChange: (month: number) => void
+  onYearChange: (year: number) => void
 }
 
 const months = [
@@ -33,14 +35,14 @@ const years = Array.from({ length: 10 }, (_, i) => {
   return { value: String(year), label: String(year) }
 })
 
-export function WardMonthSelector({ month, year }: WardMonthSelectorProps) {
+export function WardMonthSelector({ month, year, onMonthChange, onYearChange }: WardMonthSelectorProps) {
   return (
     <div className="mb-6 flex gap-4">
       <div>
         <label className="mb-1 block text-sm font-medium text-red-500">
           {'เดือน *'}
         </label>
-        <Select defaultValue={String(month)}>
+        <Select value={String(month)} onValueChange={(v) => onMonthChange(Number(v))}>
           <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
@@ -57,7 +59,7 @@ export function WardMonthSelector({ month, year }: WardMonthSelectorProps) {
         <label className="mb-1 block text-sm font-medium text-red-500">
           {'ปี ค.ศ. *'}
         </label>
-        <Select defaultValue={String(year)}>
+        <Select value={String(year)} onValueChange={(v) => onYearChange(Number(v))}>
           <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>

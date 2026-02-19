@@ -27,6 +27,41 @@ function setWards(wards: Ward[]): void {
 }
 
 // ---------------------------------------------------------------------------
+// Per-month data cache
+// Stores schedules + shifts for each ward+month+year combo so switching
+// months preserves data and members stay constant.
+// ---------------------------------------------------------------------------
+
+interface MonthSnapshot {
+  schedules: NurseSchedule[]
+  shifts: ShiftConfig[]
+}
+
+const monthDataStore = new Map<string, MonthSnapshot>()
+
+function monthKey(wardId: string, month: number, year: number): string {
+  return `${wardId}-${month}-${year}`
+}
+
+/** Save current ward schedules+shifts into the month cache */
+function saveMonthSnapshot(ward: Ward): void {
+  const key = monthKey(ward.id, ward.month, ward.year)
+  monthDataStore.set(key, {
+    schedules: ward.schedules,
+    shifts: ward.shifts,
+  })
+}
+
+/** Load previously saved schedules+shifts for a given month, or return defaults */
+function loadMonthSnapshot(wardId: string, month: number, year: number, defaultShiftsArr: ShiftConfig[]): MonthSnapshot {
+  const key = monthKey(wardId, month, year)
+  const cached = monthDataStore.get(key)
+  if (cached) return cached
+  // No data for this month yet -- return empty schedules with the ward's shift config
+  return { schedules: [], shifts: [...defaultShiftsArr] }
+}
+
+// ---------------------------------------------------------------------------
 // Seed / bootstrap
 // ---------------------------------------------------------------------------
 
@@ -34,6 +69,13 @@ function setWards(wards: Ward[]): void {
 export function getInitialWards(): Ward[] {
   if (!mockWards.find((w) => w.id === MOCK_WARD_ID)) {
     mockWards = [...mockWards, createMockMedWard()]
+  }
+  // Ensure initial month snapshots exist for all wards
+  for (const w of mockWards) {
+    const key = monthKey(w.id, w.month, w.year)
+    if (!monthDataStore.has(key)) {
+      saveMonthSnapshot(w)
+    }
   }
   return mockWards
 }
@@ -147,13 +189,31 @@ export async function getUserRole(
 
 export async function updateWardMonthYear(wardId: string, month: number, year: number): Promise<void> {
   const wards = getWards()
-  setWards(wards.map((w) => (w.id === wardId ? { ...w, month, year } : w)))
+  const ward = wards.find((w) => w.id === wardId)
+  if (!ward) return
+
+  // Save current month's schedules + shifts before switching
+  saveMonthSnapshot(ward)
+
+  // Load the target month's data (or fresh defaults)
+  const snapshot = loadMonthSnapshot(wardId, month, year, ward.shifts)
+
+  setWards(
+    wards.map((w) =>
+      w.id === wardId
+        ? { ...w, month, year, schedules: snapshot.schedules, shifts: snapshot.shifts }
+        : w,
+    ),
+  )
 }
 
 export async function updateShiftConfig(wardId: string, shifts: ShiftConfig[]): Promise<void> {
   await new Promise((r) => setTimeout(r, 100))
   const wards = getWards()
   setWards(wards.map((w) => (w.id === wardId ? { ...w, shifts } : w)))
+  // Keep month snapshot in sync
+  const ward = getWards().find((w) => w.id === wardId)
+  if (ward) saveMonthSnapshot(ward)
 }
 
 export async function updateSchedule(
@@ -195,12 +255,18 @@ export async function updateSchedule(
       return { ...w, schedules: updatedSchedules }
     })
   )
+  // Keep month snapshot in sync
+  const ward = getWards().find((w) => w.id === wardId)
+  if (ward) saveMonthSnapshot(ward)
 }
 
 export async function clearSchedule(wardId: string): Promise<void> {
   await new Promise((r) => setTimeout(r, 50))
   const wards = getWards()
   setWards(wards.map((w) => (w.id === wardId ? { ...w, schedules: [] } : w)))
+  // Keep month snapshot in sync
+  const ward = getWards().find((w) => w.id === wardId)
+  if (ward) saveMonthSnapshot(ward)
 }
 
 /** Update a user's display name across ALL wards they belong to */
@@ -254,6 +320,7 @@ export async function applySwapToSchedule(
   await updateSchedule(wardId, fromMemberId, fromDate, toShiftCode)
   // Set Nurse B's shift on toDate to what Nurse A had (fromShiftCode)
   await updateSchedule(wardId, toMemberId, toDate, fromShiftCode)
+  // updateSchedule already syncs month snapshot, so no extra call needed
 }
 
 // ---------------------------------------------------------------------------

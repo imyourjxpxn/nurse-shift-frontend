@@ -21,12 +21,15 @@ export function useWardPage() {
     updateSchedule,
     clearSchedule,
     deleteWard,
+    renameWard,
+    updateWardMonthYear,
     applySwapToSchedule,
   } = useWard()
 
   const ward = getWardById(wardId)
   const userRole = user ? getUserRole(wardId, user.id) : null
   const isHeadNurse = userRole === 'head_nurse'
+  const isCreator = !!(ward && user && ward.createdById === user.id)
 
   const {
     draftShifts,
@@ -36,7 +39,7 @@ export function useWardPage() {
     hasUnsavedChanges,
     markAsSaved,
     revertToSaved,
-  } = useUnsavedChanges(ward?.shifts, ward?.schedules, isHeadNurse)
+  } = useUnsavedChanges(ward?.shifts, ward?.schedules, isHeadNurse, ward?.month, ward?.year)
 
   // Ward with draft overlays for display
   const displayWard: Ward | undefined =
@@ -185,6 +188,30 @@ export function useWardPage() {
     [selectedCell, draftSchedules, setDraftSchedules]
   )
 
+  const handleMonthChange = useCallback(
+    (month: number) => {
+      if (!ward) return
+      updateWardMonthYear(ward.id, month, ward.year)
+    },
+    [ward, updateWardMonthYear],
+  )
+
+  const handleYearChange = useCallback(
+    (year: number) => {
+      if (!ward) return
+      updateWardMonthYear(ward.id, ward.month, year)
+    },
+    [ward, updateWardMonthYear],
+  )
+
+  const handleRenameWard = useCallback(
+    async (newName: string) => {
+      if (!ward || !user) return
+      await renameWard(ward.id, user.id, newName)
+    },
+    [ward, user, renameWard],
+  )
+
   const handleDeleteWard = useCallback(() => {
     if (!ward || !user) return
     deleteWard(ward.id, user.id)
@@ -276,6 +303,7 @@ export function useWardPage() {
     displayWard,
     userRole,
     isHeadNurse,
+    isCreator,
 
     // Unsaved changes
     hasUnsavedChanges,
@@ -303,6 +331,9 @@ export function useWardPage() {
     handleNursesRequiredChange,
     handleCellClick,
     handleShiftSelect,
+    handleMonthChange,
+    handleYearChange,
+    handleRenameWard,
     handleDeleteWard,
 
     // Swap modals

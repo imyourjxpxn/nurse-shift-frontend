@@ -37,6 +37,7 @@ export default function WardPage() {
     displayWard,
     userRole,
     isHeadNurse,
+    isCreator,
     hasUnsavedChanges,
     showCode,
     setShowCode,
@@ -56,6 +57,9 @@ export default function WardPage() {
     handleNursesRequiredChange,
     handleCellClick,
     handleShiftSelect,
+    handleMonthChange,
+    handleYearChange,
+    handleRenameWard,
     handleDeleteWard,
 
     // Swap modals
@@ -121,9 +125,11 @@ export default function WardPage() {
           showCode={showCode}
           copied={copied}
           isHeadNurse={isHeadNurse}
+          isCreator={isCreator}
           onBack={handleBackNavigation}
           onToggleCode={() => setShowCode(!showCode)}
           onCopyCode={handleCopyCode}
+          onRename={handleRenameWard}
         />
 
         {/* Role-based toolbar */}
@@ -146,7 +152,12 @@ export default function WardPage() {
           )}
         </div>
 
-        <WardMonthSelector month={ward.month} year={ward.year} />
+        <WardMonthSelector
+          month={ward.month}
+          year={ward.year}
+          onMonthChange={handleMonthChange}
+          onYearChange={handleYearChange}
+        />
 
         <WardNurseCounts
           shifts={displayWard.shifts}
@@ -281,3 +292,4 @@ export default function WardPage() {
     </div>
   )
 }
+

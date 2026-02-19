@@ -1,6 +1,7 @@
 'use client'
 
-import { ArrowLeft, Eye, EyeOff, Copy } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { ArrowLeft, Eye, EyeOff, Copy, Pencil, Check, X } from 'lucide-react'
 
 interface WardHeaderProps {
   hospitalName: string
@@ -9,9 +10,11 @@ interface WardHeaderProps {
   showCode: boolean
   copied: boolean
   isHeadNurse: boolean
+  isCreator: boolean
   onBack: () => void
   onToggleCode: () => void
   onCopyCode: () => void
+  onRename?: (newName: string) => void
 }
 
 export function WardHeader({
@@ -21,10 +24,40 @@ export function WardHeader({
   showCode,
   copied,
   isHeadNurse,
+  isCreator,
   onBack,
   onToggleCode,
   onCopyCode,
+  onRename,
 }: WardHeaderProps) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(wardName)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editing])
+
+  const canRename = isHeadNurse && isCreator && !!onRename
+
+  const handleConfirm = () => {
+    const trimmed = draft.trim()
+    if (trimmed && trimmed !== wardName) {
+      onRename?.(trimmed)
+    } else {
+      setDraft(wardName)
+    }
+    setEditing(false)
+  }
+
+  const handleCancel = () => {
+    setDraft(wardName)
+    setEditing(false)
+  }
+
   return (
     <div>
       {/* Back link */}
@@ -37,11 +70,61 @@ export function WardHeader({
         {'ย้อนกลับ'}
       </button>
 
-      {/* Hospital + Ward name */}
+      {/* Hospital */}
       <div className="mb-2">
         <p className="text-lg text-foreground">{hospitalName}</p>
       </div>
-      <h1 className="mb-4 text-2xl font-bold text-sky-500">{wardName}</h1>
+
+      {/* Ward name -- inline editable for creator head nurse */}
+      <div className="mb-4 flex items-center gap-2">
+        {editing ? (
+          <>
+            <input
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleConfirm()
+                if (e.key === 'Escape') handleCancel()
+              }}
+              className="h-9 rounded-lg border border-sky-400 bg-background px-3 text-2xl font-bold text-sky-500 outline-none focus:ring-2 focus:ring-sky-300"
+            />
+            <button
+              type="button"
+              onClick={handleConfirm}
+              className="rounded-full p-1 text-green-600 hover:bg-green-50 transition-colors"
+              aria-label="Confirm rename"
+            >
+              <Check className="size-5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="rounded-full p-1 text-red-500 hover:bg-red-50 transition-colors"
+              aria-label="Cancel rename"
+            >
+              <X className="size-5" />
+            </button>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold text-sky-500">{wardName}</h1>
+            {canRename && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft(wardName)
+                  setEditing(true)
+                }}
+                className="rounded-full p-1 text-muted-foreground hover:text-sky-500 hover:bg-sky-50 transition-colors"
+                aria-label="Rename ward"
+              >
+                <Pencil className="size-4" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Ward code (Head Nurse only) */}
       {isHeadNurse && (
