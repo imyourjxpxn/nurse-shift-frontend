@@ -80,6 +80,12 @@ export async function completeRegistration(
   return newUser
 }
 
+/** Update user display name */
+export async function updateDisplayName(user: User, newName: string): Promise<User> {
+  await new Promise((r) => setTimeout(r, 100))
+  return { ...user, displayName: newName }
+}
+
 /** Persist the authenticated user to local storage (client-side session) */
 export function persistUser(user: User): void {
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))

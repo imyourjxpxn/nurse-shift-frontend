@@ -13,9 +13,12 @@ import {
   createWard as serviceCreateWard,
   joinWard as serviceJoinWard,
   deleteWard as serviceDeleteWard,
+  renameWard as serviceRenameWard,
+  updateWardMonthYear as serviceUpdateWardMonthYear,
   updateShiftConfig as serviceUpdateShiftConfig,
   updateSchedule as serviceUpdateSchedule,
   clearSchedule as serviceClearSchedule,
+  updateMemberNameByUserId as serviceUpdateMemberNameByUserId,
   ensureUserInMockWard as serviceEnsureUserInMockWard,
   applySwapToSchedule as serviceApplySwapToSchedule,
 } from '@/services/ward.service'
@@ -39,12 +42,15 @@ interface WardContextType {
   ) => Promise<Ward>
   joinWard: (code: string, userId: string, userName: string) => Promise<JoinWardResult>
   deleteWard: (wardId: string, userId: string) => Promise<boolean>
+  renameWard: (wardId: string, userId: string, newName: string) => Promise<boolean>
   getWardsByHospital: (hospitalId: string) => Ward[]
   getWardById: (wardId: string) => Ward | undefined
   getUserRole: (wardId: string, userId: string) => 'head_nurse' | 'nurse' | null
+  updateWardMonthYear: (wardId: string, month: number, year: number) => Promise<void>
   updateShiftConfig: (wardId: string, shifts: ShiftConfig[]) => void
   updateSchedule: (wardId: string, memberId: string, date: number, shiftCode: string) => void
   clearSchedule: (wardId: string) => void
+  updateMemberNameByUserId: (userId: string, newName: string) => Promise<void>
   ensureUserInMockWard: (userId: string, userName: string, hospitalId: string) => void
   applySwapToSchedule: (wardId: string, fromMemberId: string, toMemberId: string, fromDate: number, toDate: number, fromShiftCode: string, toShiftCode: string) => Promise<void>
 }
@@ -106,6 +112,15 @@ export function WardProvider({ children }: { children: ReactNode }) {
     [refreshWards],
   )
 
+  const renameWard = useCallback(
+    async (wardId: string, userId: string, newName: string): Promise<boolean> => {
+      const ok = await serviceRenameWard(wardId, userId, newName)
+      if (ok) refreshWards()
+      return ok
+    },
+    [refreshWards],
+  )
+
   const getWardsByHospital = useCallback(
     (hospitalId: string): Ward[] => wards.filter((w) => w.hospitalId === hospitalId),
     [wards],
@@ -123,6 +138,14 @@ export function WardProvider({ children }: { children: ReactNode }) {
       return ward.members.find((m) => m.userId === userId)?.role ?? null
     },
     [wards],
+  )
+
+  const updateWardMonthYear = useCallback(
+    async (wardId: string, month: number, year: number) => {
+      await serviceUpdateWardMonthYear(wardId, month, year)
+      refreshWards()
+    },
+    [refreshWards],
   )
 
   const updateShiftConfig = useCallback(
@@ -144,6 +167,14 @@ export function WardProvider({ children }: { children: ReactNode }) {
   const clearSchedule = useCallback(
     async (wardId: string) => {
       await serviceClearSchedule(wardId)
+      refreshWards()
+    },
+    [refreshWards],
+  )
+
+  const updateMemberNameByUserId = useCallback(
+    async (userId: string, newName: string) => {
+      await serviceUpdateMemberNameByUserId(userId, newName)
       refreshWards()
     },
     [refreshWards],
@@ -173,12 +204,15 @@ export function WardProvider({ children }: { children: ReactNode }) {
         createWard,
         joinWard,
         deleteWard,
+        renameWard,
         getWardsByHospital,
         getWardById,
         getUserRole,
+        updateWardMonthYear,
         updateShiftConfig,
         updateSchedule,
         clearSchedule,
+        updateMemberNameByUserId,
         ensureUserInMockWard,
         applySwapToSchedule,
       }}

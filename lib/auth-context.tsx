@@ -5,6 +5,7 @@ import {
   loginWithGoogle as serviceLoginWithGoogle,
   loginAsMockUser as serviceLoginAsMockUser,
   completeRegistration as serviceCompleteRegistration,
+  updateDisplayName as serviceUpdateDisplayName,
   persistUser,
   getPersistedUser,
   clearPersistedUser,
@@ -30,6 +31,7 @@ interface AuthContextType extends AuthState {
   loginWithGoogle: () => Promise<{ isNewUser: boolean }>
   loginAsMockUser: (userId: string) => void
   completeRegistration: (displayName: string, hospitalId: string, hospitalName: string) => void
+  updateDisplayName: (newName: string) => Promise<void>
   logout: () => void
   googleEmail: string | null
   googleName: string | null
@@ -77,6 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [googleEmail],
   )
 
+  const updateDisplayName = useCallback(async (newName: string) => {
+    if (!user) return
+    const updated = await serviceUpdateDisplayName(user, newName)
+    setUser(updated)
+    persistUser(updated)
+  }, [user])
+
   const logout = useCallback(() => {
     setUser(null)
     clearPersistedUser()
@@ -93,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithGoogle,
         loginAsMockUser,
         completeRegistration,
+        updateDisplayName,
         logout,
         googleEmail,
         googleName,

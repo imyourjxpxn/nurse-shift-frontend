@@ -111,6 +111,18 @@ export async function joinWard(
   return { success: true, ward: updatedWard }
 }
 
+export async function renameWard(wardId: string, userId: string, newName: string): Promise<boolean> {
+  const wards = getWards()
+  const ward = wards.find((w) => w.id === wardId)
+  if (!ward) return false
+  // Only the creator (head nurse who created) can rename
+  if (ward.createdById !== userId) return false
+  const member = ward.members.find((m) => m.userId === userId)
+  if (!member || member.role !== 'head_nurse') return false
+  setWards(wards.map((w) => (w.id === wardId ? { ...w, name: newName } : w)))
+  return true
+}
+
 export async function deleteWard(wardId: string, userId: string): Promise<boolean> {
   await new Promise((r) => setTimeout(r, 200))
 
@@ -131,6 +143,11 @@ export async function getUserRole(
   if (!ward) return null
   const member = ward.members.find((m) => m.userId === userId)
   return member?.role ?? null
+}
+
+export async function updateWardMonthYear(wardId: string, month: number, year: number): Promise<void> {
+  const wards = getWards()
+  setWards(wards.map((w) => (w.id === wardId ? { ...w, month, year } : w)))
 }
 
 export async function updateShiftConfig(wardId: string, shifts: ShiftConfig[]): Promise<void> {
@@ -184,6 +201,19 @@ export async function clearSchedule(wardId: string): Promise<void> {
   await new Promise((r) => setTimeout(r, 50))
   const wards = getWards()
   setWards(wards.map((w) => (w.id === wardId ? { ...w, schedules: [] } : w)))
+}
+
+/** Update a user's display name across ALL wards they belong to */
+export async function updateMemberNameByUserId(userId: string, newName: string): Promise<void> {
+  const wards = getWards()
+  setWards(
+    wards.map((w) => ({
+      ...w,
+      members: w.members.map((m) =>
+        m.userId === userId ? { ...m, name: newName } : m,
+      ),
+    })),
+  )
 }
 
 export async function ensureUserInMockWard(
