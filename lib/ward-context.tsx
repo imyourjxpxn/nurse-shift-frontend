@@ -17,6 +17,7 @@ import {
   updateSchedule as serviceUpdateSchedule,
   clearSchedule as serviceClearSchedule,
   ensureUserInMockWard as serviceEnsureUserInMockWard,
+  applySwapToSchedule as serviceApplySwapToSchedule,
 } from '@/services/ward.service'
 
 interface ScheduleEntry { date: number; shiftCode: string }
@@ -45,6 +46,7 @@ interface WardContextType {
   updateSchedule: (wardId: string, memberId: string, date: number, shiftCode: string) => void
   clearSchedule: (wardId: string) => void
   ensureUserInMockWard: (userId: string, userName: string, hospitalId: string) => void
+  applySwapToSchedule: (wardId: string, fromMemberId: string, toMemberId: string, fromDate: number, toDate: number, fromShiftCode: string, toShiftCode: string) => Promise<void>
 }
 
 const WardContext = createContext<WardContextType | undefined>(undefined)
@@ -155,6 +157,14 @@ export function WardProvider({ children }: { children: ReactNode }) {
     [refreshWards],
   )
 
+  const applySwapToSchedule = useCallback(
+    async (wardId: string, fromMemberId: string, toMemberId: string, fromDate: number, toDate: number, fromShiftCode: string, toShiftCode: string) => {
+      await serviceApplySwapToSchedule(wardId, fromMemberId, toMemberId, fromDate, toDate, fromShiftCode, toShiftCode)
+      refreshWards()
+    },
+    [refreshWards],
+  )
+
   return (
     <WardContext.Provider
       value={{
@@ -170,6 +180,7 @@ export function WardProvider({ children }: { children: ReactNode }) {
         updateSchedule,
         clearSchedule,
         ensureUserInMockWard,
+        applySwapToSchedule,
       }}
     >
       {children}

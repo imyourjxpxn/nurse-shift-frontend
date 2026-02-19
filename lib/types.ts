@@ -63,6 +63,24 @@ export interface AuthState {
   isAuthenticated: boolean
 }
 
+export interface SwapRequest {
+  id: string
+  wardId: string
+  fromNurseId: string
+  fromNurseName: string
+  toNurseId: string
+  toNurseName: string
+  fromDate: number
+  toDate: number
+  fromShiftCode: string
+  toShiftCode: string
+  reason: string
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled'
+  createdAt: string
+  month: number
+  year: number
+}
+
 // Service response types for future API integration
 export interface JoinWardResult {
   success: boolean

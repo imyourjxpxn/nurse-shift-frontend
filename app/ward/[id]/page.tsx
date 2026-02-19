@@ -12,6 +12,18 @@ import { ShiftSummary } from '@/components/ward/shift-summary'
 import { ShiftSelectorModal } from '@/components/modals/shift-selector-modal'
 import { DeleteWardModal } from '@/components/modals/delete-ward-modal'
 import { UnsavedChangesModal } from '@/components/modals/unsaved-changes-modal'
+import { CreateSwapRequestModal } from '@/components/modals/create-swap-request-modal'
+import { MySwapRequestsModal } from '@/components/ward/my-swap-requests'
+import { ApproveSwapRequestsModal } from '@/components/ward/approve-swap-requests'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog'
 import { useWardPage } from '@/hooks/use-ward-page'
 
 export default function WardPage() {
@@ -43,6 +55,25 @@ export default function WardPage() {
     handleCellClick,
     handleShiftSelect,
     handleDeleteWard,
+
+    // Swap modals
+    createSwapOpen,
+    setCreateSwapOpen,
+    mySwapRequestsOpen,
+    setMySwapRequestsOpen,
+    approveSwapOpen,
+    setApproveSwapOpen,
+    currentMember,
+    handleNurseCellClick,
+    handleSwapSubmit,
+    swapValidationMsg,
+    swapCellInfo,
+    lockedCells,
+    lockedCellPopup,
+    setLockedCellPopup,
+    handleLockedCellClick,
+    handleApproveSwap,
+
     router,
   } = useWardPage()
 
@@ -106,10 +137,8 @@ export default function WardPage() {
             />
           ) : (
             <NurseToolbar
-              onMySwapRequest={() => alert('My Swap Request coming soon')}
-              onApproveSwap={() =>
-                alert('Approve Swap Request coming soon')
-              }
+              onMySwapRequest={() => setMySwapRequestsOpen(true)}
+              onApproveSwap={() => setApproveSwapOpen(true)}
               onExport={() => alert('Export functionality coming soon')}
             />
           )}
@@ -132,7 +161,9 @@ export default function WardPage() {
         <ScheduleGrid
           ward={displayWard}
           isHeadNurse={isHeadNurse}
-          onCellClick={handleCellClick}
+          onCellClick={handleNurseCellClick}
+          lockedCells={lockedCells}
+          onLockedCellClick={handleLockedCellClick}
         />
 
         <ShiftSummary ward={displayWard} />
@@ -167,6 +198,77 @@ export default function WardPage() {
           router.push('/home')
         }}
       />
+
+      {/* Swap validation toast */}
+      {swapValidationMsg && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-red-600 px-6 py-3 text-sm font-medium text-white shadow-lg">
+          {swapValidationMsg}
+        </div>
+      )}
+
+      {/* Swap modals (nurse role) */}
+      {currentMember && (
+        <>
+          <CreateSwapRequestModal
+            open={createSwapOpen}
+            onOpenChange={setCreateSwapOpen}
+            onSubmit={handleSwapSubmit}
+            currentMemberId={currentMember.id}
+            members={displayWard.members}
+            schedules={displayWard.schedules}
+            month={ward.month}
+            year={ward.year}
+            initialDate={swapCellInfo?.date}
+            initialShift={swapCellInfo?.shift}
+            lockedCells={lockedCells}
+          />
+
+          <MySwapRequestsModal
+            open={mySwapRequestsOpen}
+            onOpenChange={setMySwapRequestsOpen}
+            wardId={ward.id}
+            memberId={currentMember.id}
+            month={ward.month}
+            year={ward.year}
+          />
+
+          <ApproveSwapRequestsModal
+            open={approveSwapOpen}
+            onOpenChange={setApproveSwapOpen}
+            wardId={ward.id}
+            memberId={currentMember.id}
+            month={ward.month}
+            year={ward.year}
+            onApproveSwap={handleApproveSwap}
+          />
+        </>
+      )}
+
+      {/* Locked cell popup */}
+      <AlertDialog open={!!lockedCellPopup} onOpenChange={(open) => !open && setLockedCellPopup(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Swap Request in Progress</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  {'This shift is currently involved in a pending swap request between '}
+                  <span className="font-semibold text-foreground">{lockedCellPopup?.fromNurseName}</span>
+                  {' and '}
+                  <span className="font-semibold text-foreground">{lockedCellPopup?.toNurseName}</span>
+                  {'.'}
+                </p>
+                <p>Approval is in progress. You cannot create another request.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setLockedCellPopup(null)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

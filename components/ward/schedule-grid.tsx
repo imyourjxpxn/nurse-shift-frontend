@@ -2,10 +2,19 @@
 
 import type { Ward, NurseSchedule } from '@/lib/types'
 
+interface LockedCellInfo {
+  memberId: string
+  date: number
+  fromNurseName: string
+  toNurseName: string
+}
+
 interface ScheduleGridProps {
   ward: Ward
   isHeadNurse: boolean
   onCellClick: (memberId: string, date: number, currentShift: string) => void
+  lockedCells?: LockedCellInfo[]
+  onLockedCellClick?: (info: LockedCellInfo) => void
 }
 
 const shiftCellColors: Record<string, string> = {
@@ -56,7 +65,7 @@ const thaiMonthsShort = [
   'ธ.ค.',
 ]
 
-export function ScheduleGrid({ ward, isHeadNurse, onCellClick }: ScheduleGridProps) {
+export function ScheduleGrid({ ward, isHeadNurse, onCellClick, lockedCells = [], onLockedCellClick }: ScheduleGridProps) {
   const daysInMonth = getDaysInMonth(ward.month, ward.year)
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
   const monthLabel = thaiMonthsShort[ward.month - 1] || ''
@@ -146,6 +155,11 @@ export function ScheduleGrid({ ward, isHeadNurse, onCellClick }: ScheduleGridPro
                         day
                       )
 
+                      const lockedInfo = lockedCells.find(
+                        (c) => c.memberId === member.id && c.date === day,
+                      )
+                      const isLocked = !!lockedInfo
+
                       const cellColor = shift
                         ? shiftCellColors[shift] || 'bg-gray-100 text-gray-600'
                         : ''
@@ -153,17 +167,25 @@ export function ScheduleGrid({ ward, isHeadNurse, onCellClick }: ScheduleGridPro
                       return (
                         <td
                           key={day}
-                          className={`border-l border-border-400 px-1 py-2.5 text-center text-xs font-semibold ${cellColor} ${
-                            isHeadNurse
-                              ? 'cursor-pointer hover:brightness-90 transition-all'
-                              : ''
+                          className={`border-l border-border-400 px-1 py-2.5 text-center text-xs font-semibold transition-all ${
+                            isLocked
+                              ? 'bg-yellow-100/80 text-yellow-700 cursor-not-allowed relative'
+                              : `${cellColor} cursor-pointer hover:brightness-90`
                           }`}
-                          onClick={() =>
-                            isHeadNurse &&
-                            onCellClick(member.id, day, shift)
-                          }
+                          onClick={() => {
+                            if (isLocked && lockedInfo) {
+                              onLockedCellClick?.(lockedInfo)
+                            } else {
+                              onCellClick(member.id, day, shift)
+                            }
+                          }}
                         >
                           {shift}
+                          {isLocked && (
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              <span className="size-1.5 rounded-full bg-yellow-500" />
+                            </span>
+                          )}
                         </td>
                       )
                     })}

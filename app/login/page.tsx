@@ -9,8 +9,9 @@ import { useAuth } from '@/lib/auth-context'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { isAuthenticated, loginWithGoogle, loginAsMockHeadNurse, isLoading } = useAuth()
+  const { isAuthenticated, loginWithGoogle, loginAsMockUser, isLoading } = useAuth()
   const [isSigningIn, setIsSigningIn] = useState(false)
+  const [mockSigningIn, setMockSigningIn] = useState<string | null>(null)
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -62,23 +63,41 @@ export default function LoginPage() {
           </span>
         </Button>
 
-        <div className="flex w-full max-w-sm flex-col items-center gap-2">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex w-full max-w-sm flex-col items-center gap-3">
+          <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
-            <span>Development Only</span>
+            <span>Select Mock User (Development Only)</span>
             <span className="h-px flex-1 bg-border" />
           </div>
-          <Button
-            variant="outline"
-            className="h-10 w-full gap-2 rounded-full border-dashed border-amber-400 text-amber-700 hover:bg-amber-50"
-            onClick={() => {
-              loginAsMockHeadNurse()
-              router.push('/home')
-            }}
-            disabled={isLoading || isSigningIn}
-          >
-            <span className="text-sm font-medium">Sign in as Head Nurse (Mock)</span>
-          </Button>
+
+          <div className="flex w-full flex-col gap-2">
+            {[
+              { id: 'mock-head-nurse', label: 'A', name: 'พว.สมหญิง จริงใจ', role: 'Head Nurse' },
+              { id: 'nurse-2', label: 'B', name: 'พว.ปรียา วงศ์กุล', role: 'Nurse' },
+              { id: 'nurse-3', label: 'C', name: 'พว.นภา ศรีสุข', role: 'Nurse' },
+            ].map((u) => (
+              <button
+                key={u.id}
+                className="flex w-full items-center gap-3 rounded-lg border border-dashed border-amber-300 bg-background px-4 py-3 text-left transition-colors hover:bg-amber-50 disabled:opacity-50"
+                onClick={async () => {
+                  setMockSigningIn(u.id)
+                  await loginAsMockUser(u.id)
+                  router.push('/home')
+                }}
+                disabled={isLoading || isSigningIn || mockSigningIn !== null}
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700">
+                  {u.label}
+                </span>
+                <span className="flex flex-col">
+                  <span className="text-sm font-medium text-foreground">
+                    {mockSigningIn === u.id ? 'Signing in...' : u.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{u.role}</span>
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">

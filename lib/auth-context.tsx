@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import {
   loginWithGoogle as serviceLoginWithGoogle,
-  loginAsMockHeadNurse as serviceLoginAsMockHeadNurse,
+  loginAsMockUser as serviceLoginAsMockUser,
   completeRegistration as serviceCompleteRegistration,
   persistUser,
   getPersistedUser,
@@ -28,7 +28,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   loginWithGoogle: () => Promise<{ isNewUser: boolean }>
-  loginAsMockHeadNurse: () => void
+  loginAsMockUser: (userId: string) => void
   completeRegistration: (displayName: string, hospitalId: string, hospitalName: string) => void
   logout: () => void
   googleEmail: string | null
@@ -59,8 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { isNewUser: true }
   }, [])
 
-  const loginAsMockHeadNurse = useCallback(async () => {
-    const mockUser = await serviceLoginAsMockHeadNurse()
+  const loginAsMockUser = useCallback(async (userId: string) => {
+    const mockUser = await serviceLoginAsMockUser(userId)
     setUser(mockUser)
     persistUser(mockUser)
   }, [])
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user?.isRegistered,
         loginWithGoogle,
-        loginAsMockHeadNurse,
+        loginAsMockUser,
         completeRegistration,
         logout,
         googleEmail,

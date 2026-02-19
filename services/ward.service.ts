@@ -208,6 +208,24 @@ export async function ensureUserInMockWard(
   )
 }
 
+/** Swap two shift entries after an approval:
+ *  Nurse A (fromMemberId) on fromDate gets toShiftCode
+ *  Nurse B (toMemberId) on toDate gets fromShiftCode */
+export async function applySwapToSchedule(
+  wardId: string,
+  fromMemberId: string,
+  toMemberId: string,
+  fromDate: number,
+  toDate: number,
+  fromShiftCode: string,
+  toShiftCode: string,
+): Promise<void> {
+  // Set Nurse A's shift on fromDate to what Nurse B had (toShiftCode)
+  await updateSchedule(wardId, fromMemberId, fromDate, toShiftCode)
+  // Set Nurse B's shift on toDate to what Nurse A had (fromShiftCode)
+  await updateSchedule(wardId, toMemberId, toDate, fromShiftCode)
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

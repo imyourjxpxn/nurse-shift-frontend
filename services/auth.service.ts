@@ -1,4 +1,4 @@
-import { mockGoogleProfile, mockHeadNurseUser } from '@/mocks/users'
+import { mockGoogleProfile, mockUsers } from '@/mocks/users'
 
 interface User {
   id: string
@@ -39,10 +39,24 @@ export async function loginWithGoogle(): Promise<{
   return { isNewUser: true, email: mockGoogleProfile.email, name: mockGoogleProfile.name }
 }
 
-/** Return the pre-built mock head-nurse user (dev-only shortcut) */
-export async function loginAsMockHeadNurse(): Promise<User> {
+/** Return a mock user by userId (dev-only shortcut) */
+export async function loginAsMockUser(userId: string): Promise<User> {
   await new Promise((r) => setTimeout(r, 50))
-  return mockHeadNurseUser
+  const found = mockUsers.find((u) => u.id === userId)
+  if (!found) throw new Error(`Mock user not found: ${userId}`)
+  return {
+    id: found.id,
+    email: found.email,
+    displayName: found.displayName,
+    hospitalId: found.hospitalId,
+    hospitalName: found.hospitalName,
+    isRegistered: found.isRegistered,
+  }
+}
+
+/** Return the list of all available mock users (for dev login UI) */
+export function getMockUsers() {
+  return mockUsers
 }
 
 /** Complete first-time registration */
