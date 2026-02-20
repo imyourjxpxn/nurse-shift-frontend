@@ -1,7 +1,5 @@
 'use client'
 
-'use client'
-
 import { Header } from '@/components/header'
 import { WardHeader } from '@/components/ward/ward-header'
 import { HeadNurseToolbar } from '@/components/ward/head-nurse-toolbar'
@@ -354,6 +352,3 @@ export default function WardPage() {
     </div>
   )
 }
-
-
-
