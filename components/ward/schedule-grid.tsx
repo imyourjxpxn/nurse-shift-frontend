@@ -1,42 +1,76 @@
 'use client'
 
-import type { Ward, NurseSchedule } from '@/lib/types'
+import type { Ward, NurseSchedule, DayShifts } from '@/lib/types'
+import { emptyDayShifts, hasAnyShift, hasSpecialStatus } from '@/lib/types'
 
 interface ScheduleGridProps {
   ward: Ward
   isHeadNurse: boolean
   isCreator?: boolean
-  onCellClick: (memberId: string, date: number, currentShift: string) => void
+  onCellClick: (memberId: string, date: number, currentShifts: DayShifts) => void
   onRemoveMember?: (memberId: string, memberName: string) => void
 }
 
-const shiftCellColors: Record<string, string> = {
-  ช: 'bg-sky-100 text-sky-700',
-  บ: 'bg-orange-100 text-orange-700',
-  ด: 'bg-indigo-100 text-indigo-700',
-  E: 'bg-rose-100 text-rose-700',
-  ล: 'bg-gray-100 text-gray-500',
-  O: 'bg-emerald-100 text-emerald-700'
+/** Label map for display inside cells */
+const SHIFT_LABELS: { key: keyof DayShifts; label: string }[] = [
+  { key: 'M', label: 'เช้า' },
+  { key: 'A', label: 'บ่าย' },
+  { key: 'N', label: 'ดึก' },
+]
+
+const SPECIAL_LABELS: Record<string, string> = {
+  E: 'ER',
+  L: 'ลา',
+  O: 'Off',
+}
+
+/** Color styling per cell content */
+function getCellStyle(shifts: DayShifts): { bg: string; text: string } {
+  if (shifts.E) return { bg: 'bg-rose-100', text: 'text-rose-700' }
+  if (shifts.L) return { bg: 'bg-gray-100', text: 'text-gray-500' }
+  if (shifts.O) return { bg: 'bg-emerald-100', text: 'text-emerald-700' }
+  // Working shifts -- determine dominant color
+  const count = [shifts.M, shifts.A, shifts.N].filter(Boolean).length
+  if (count === 0) return { bg: '', text: 'text-muted-foreground/30' }
+  if (shifts.M && !shifts.A && !shifts.N) return { bg: 'bg-sky-100', text: 'text-sky-700' }
+  if (!shifts.M && shifts.A && !shifts.N) return { bg: 'bg-orange-100', text: 'text-orange-700' }
+  if (!shifts.M && !shifts.A && shifts.N) return { bg: 'bg-indigo-100', text: 'text-indigo-700' }
+  // Multi-shift: use a neutral accent
+  return { bg: 'bg-blue-50', text: 'text-blue-800' }
+}
+
+/** Build cell display text */
+function getCellText(shifts: DayShifts): string {
+  if (hasSpecialStatus(shifts)) {
+    if (shifts.E) return SPECIAL_LABELS.E
+    if (shifts.L) return SPECIAL_LABELS.L
+    if (shifts.O) return SPECIAL_LABELS.O
+  }
+  const parts: string[] = []
+  for (const { key, label } of SHIFT_LABELS) {
+    if (shifts[key]) parts.push(label)
+  }
+  return parts.join(' ')
 }
 
 const legendItems = [
-  { code: 'ช', label: 'เวรเช้า : ช', color: 'bg-sky-100 border-sky-200' },
-  { code: 'บ', label: 'เวรบ่าย : บ', color: 'bg-orange-100 border-orange-200' },
-  { code: 'ด', label: 'เวรดึก : ด', color: 'bg-indigo-100 border-indigo-200' },
-  { code: 'E', label: 'Emergeny : E', color: 'bg-rose-100 border-rose-200' },
-  { code: 'ล', label: 'ลา : ล', color: 'bg-gray-100 border-gray-200' },
-  { code: 'O', label: 'Off : O', color: 'bg-emerald-100 border-emerald-200' },
+  { label: 'เวรเช้า', color: 'bg-sky-100 border-sky-300' },
+  { label: 'เวรบ่าย', color: 'bg-orange-100 border-orange-300' },
+  { label: 'เวรดึก', color: 'bg-indigo-100 border-indigo-300' },
+  { label: 'ER', color: 'bg-rose-100 border-rose-300' },
+  { label: 'ลา', color: 'bg-gray-100 border-gray-300' },
+  { label: 'Off', color: 'bg-emerald-100 border-emerald-300' },
 ]
 
-function getShiftForDate(
+function getShiftsForDate(
   schedules: NurseSchedule[],
   memberId: string,
-  date: number
-): string {
+  date: number,
+): DayShifts {
   const schedule = schedules.find((s) => s.memberId === memberId)
-  if (!schedule) return ''
+  if (!schedule) return emptyDayShifts()
   const entry = schedule.entries.find((e) => e.date === date)
-  return entry?.shiftCode || ''
+  return entry?.shifts ?? emptyDayShifts()
 }
 
 function getDaysInMonth(month: number, year: number): number {
@@ -44,18 +78,8 @@ function getDaysInMonth(month: number, year: number): number {
 }
 
 const thaiMonthsShort = [
-  'ม.ค.',
-  'ก.พ.',
-  'มี.ค.',
-  'เม.ย.',
-  'พ.ค.',
-  'มิ.ย.',
-  'ก.ค.',
-  'ส.ค.',
-  'ก.ย.',
-  'ต.ค.',
-  'พ.ย.',
-  'ธ.ค.',
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ]
 
 export function ScheduleGrid({ ward, isHeadNurse, isCreator, onCellClick, onRemoveMember }: ScheduleGridProps) {
@@ -65,22 +89,17 @@ export function ScheduleGrid({ ward, isHeadNurse, isCreator, onCellClick, onRemo
 
   return (
     <div className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
-      
+
       {/* Header */}
       <div className="border-b px-5 py-4">
         <h3 className="text-lg font-bold text-foreground">
-          จัดตารางเวรพยาบาล
+          {'จัดตารางเวรพยาบาล'}
         </h3>
-
-        <div className="mt-3 flex flex-wrap items-center gap-4">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           {legendItems.map((item) => (
-            <div key={item.code} className="flex items-center gap-2">
-              <span
-                className={`inline-block size-5 rounded border ${item.color}`}
-              />
-              <span className="text-sm text-muted-foreground">
-                {item.label}
-              </span>
+            <div key={item.label} className="flex items-center gap-1.5">
+              <span className={`inline-block size-4 rounded border ${item.color}`} />
+              <span className="text-xs text-muted-foreground">{item.label}</span>
             </div>
           ))}
         </div>
@@ -89,29 +108,17 @@ export function ScheduleGrid({ ward, isHeadNurse, isCreator, onCellClick, onRemo
       {/* Table Wrapper */}
       <div className="p-3">
         <div className="overflow-x-auto">
-          <table
-            className="w-full border-separate border-spacing-0"
-            style={{ minWidth: '900px' }}
-          >
-            <thead className="border-t-2 border-b-4 border-slate-00">
-
-
+          <table className="w-full border-separate border-spacing-0" style={{ minWidth: '1100px' }}>
+            <thead>
               <tr>
-                <th className="sticky left-0 z-20 min-w-[140px] 
-                    bg-sky-500 
-                    rounded-tl-2xl 
-                    px-3 py-2.5 
-                    text-left text-sm font-medium text-white
-                    border-r border-slate-300
-">
+                <th className="sticky left-0 z-20 min-w-[140px] bg-sky-500 rounded-tl-2xl px-3 py-2.5 text-left text-sm font-medium text-white border-r border-slate-300">
                   {'วันที่ (เดือน ' + monthLabel + ')'}
                 </th>
-
                 {days.map((day, index) => (
                   <th
                     key={day}
-                    className={`min-w-[36px] bg-sky-500 px-1 py-2.5 text-center text-sm font-medium text-white 
-                      ${index === days.length - 1 ? 'rounded-tr-2xl' : ''
+                    className={`min-w-[56px] bg-sky-500 px-0.5 py-2.5 text-center text-sm font-medium text-white ${
+                      index === days.length - 1 ? 'rounded-tr-2xl' : ''
                     }`}
                   >
                     {day}
@@ -122,14 +129,11 @@ export function ScheduleGrid({ ward, isHeadNurse, isCreator, onCellClick, onRemo
 
             <tbody>
               {ward.members.map((member, memberIndex) => {
-                const rowBg =
-                  memberIndex % 2 === 0 ? 'bg-sky-50/60' : 'bg-white'
+                const rowBg = memberIndex % 2 === 0 ? 'bg-sky-50/60' : 'bg-white'
 
                 return (
-                  <tr key={member.id} className={`${rowBg}`}>
-                    <td
-                      className={`sticky left-0 z-10 px-3 py-2.5 text-sm font-medium ${rowBg}`}
-                    >
+                  <tr key={member.id} className={rowBg}>
+                    <td className={`sticky left-0 z-10 px-3 py-2 text-sm font-medium ${rowBg}`}>
                       <span className="flex items-center gap-1.5">
                         <span
                           className={
@@ -159,23 +163,25 @@ export function ScheduleGrid({ ward, isHeadNurse, isCreator, onCellClick, onRemo
                     </td>
 
                     {days.map((day) => {
-                      const shift = getShiftForDate(
-                        ward.schedules,
-                        member.id,
-                        day
-                      )
-
-                      const cellColor = shift
-                        ? shiftCellColors[shift] || 'bg-gray-100 text-gray-600'
-                        : ''
+                      const dayShifts = getShiftsForDate(ward.schedules, member.id, day)
+                      const hasShift = hasAnyShift(dayShifts)
+                      const cellText = getCellText(dayShifts)
+                      const style = getCellStyle(dayShifts)
 
                       return (
-                        <td
-                          key={day}
-                          className={`border-l border-border-400 px-1 py-2.5 text-center text-xs font-semibold transition-all ${cellColor} cursor-pointer hover:brightness-90`}
-                          onClick={() => onCellClick(member.id, day, shift)}
-                        >
-                          {shift}
+                        <td key={day} className="border-l border-border/40 px-0 py-1 text-center">
+                          <button
+                            type="button"
+                            onClick={() => onCellClick(member.id, day, dayShifts)}
+                            className={`mx-auto flex min-h-[28px] w-[52px] items-center justify-center rounded-md px-0.5 py-0.5 text-[9px] font-bold leading-tight transition-colors ${
+                              hasShift
+                                ? `${style.bg} ${style.text}`
+                                : 'text-muted-foreground/20 hover:bg-muted/40'
+                            } cursor-pointer`}
+                            aria-label={`Day ${day} shift`}
+                          >
+                            {hasShift ? cellText : '-'}
+                          </button>
                         </td>
                       )
                     })}

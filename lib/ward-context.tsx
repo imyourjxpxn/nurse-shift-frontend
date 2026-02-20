@@ -24,7 +24,8 @@ import {
   applySwapToSchedule as serviceApplySwapToSchedule,
 } from '@/services/ward.service'
 
-interface ScheduleEntry { date: number; shiftCode: string }
+interface DayShifts { M: boolean; A: boolean; N: boolean; E: boolean; L: boolean; O: boolean }
+interface ScheduleEntry { date: number; shifts: DayShifts }
 interface NurseSchedule { memberId: string; entries: ScheduleEntry[] }
 interface ShiftConfig { name: string; code: string; startHour: string; startMinute: string; endHour: string; endMinute: string; nursesRequired: number }
 interface WardMember { id: string; name: string; role: 'head_nurse' | 'nurse'; userId: string }
@@ -50,7 +51,7 @@ interface WardContextType {
   getUserRole: (wardId: string, userId: string) => 'head_nurse' | 'nurse' | null
   updateWardMonthYear: (wardId: string, month: number, year: number) => Promise<void>
   updateShiftConfig: (wardId: string, shifts: ShiftConfig[]) => void
-  updateSchedule: (wardId: string, memberId: string, date: number, shiftCode: string) => void
+  updateSchedule: (wardId: string, memberId: string, date: number, dayShifts: DayShifts) => void
   clearSchedule: (wardId: string) => void
   updateMemberNameByUserId: (userId: string, newName: string) => Promise<void>
   ensureUserInMockWard: (userId: string, userName: string, hospitalId: string) => void
@@ -168,8 +169,8 @@ export function WardProvider({ children }: { children: ReactNode }) {
   )
 
   const updateSchedule = useCallback(
-    async (wardId: string, memberId: string, date: number, shiftCode: string) => {
-      await serviceUpdateSchedule(wardId, memberId, date, shiftCode)
+    async (wardId: string, memberId: string, date: number, dayShifts: DayShifts) => {
+      await serviceUpdateSchedule(wardId, memberId, date, dayShifts)
       refreshWards()
     },
     [refreshWards],

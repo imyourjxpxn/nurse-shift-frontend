@@ -32,9 +32,50 @@ export interface ShiftConfig {
   nursesRequired: number
 }
 
-export interface ScheduleEntry {
+/** Legacy single-shift entry (kept for swap request references) */
+export interface LegacyScheduleEntry {
   date: number
   shiftCode: string
+}
+
+/**
+ * Multi-slot shift entry per day.
+ * Working shifts (M/A/N) support multi-select (up to 3).
+ * Special statuses (E/L/O) are mutually exclusive single-select
+ * and cannot be combined with working shifts.
+ */
+export interface DayShifts {
+  M: boolean  // Morning (เช้า)
+  A: boolean  // Afternoon (บ่าย)
+  N: boolean  // Night (ดึก)
+  E: boolean  // Emergency (ฉุกเฉิน) -- single-select special status
+  L: boolean  // Leave (ลา) -- single-select special status
+  O: boolean  // Off (วันหยุด) -- single-select special status
+}
+
+/** Helper: create a blank DayShifts with all false */
+export function emptyDayShifts(): DayShifts {
+  return { M: false, A: false, N: false, E: false, L: false, O: false }
+}
+
+/** Check if a DayShifts has any active slot */
+export function hasAnyShift(s: DayShifts): boolean {
+  return s.M || s.A || s.N || s.E || s.L || s.O
+}
+
+/** Check if a DayShifts has a special status active */
+export function hasSpecialStatus(s: DayShifts): boolean {
+  return s.E || s.L || s.O
+}
+
+/** Check if a DayShifts has any working shift active */
+export function hasWorkingShift(s: DayShifts): boolean {
+  return s.M || s.A || s.N
+}
+
+export interface ScheduleEntry {
+  date: number
+  shifts: DayShifts
 }
 
 export interface NurseSchedule {
