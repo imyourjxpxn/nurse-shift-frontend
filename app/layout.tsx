@@ -1,45 +1,26 @@
-import React from "react"
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { AuthProvider } from '@/lib/auth-context'
-import { WardProvider } from '@/lib/ward-context'
-import './globals.css'
+import { Bai_Jamjuree  } from "next/font/google"
+import { AuthProvider } from "@/lib/auth-context"
+import { WardProvider } from "@/lib/ward-context"
+import "./globals.css"
 
-const _geist = Geist({ subsets: ['latin'] })
-const _geistMono = Geist_Mono({ subsets: ['latin'] })
-
-export const metadata: Metadata = {
-  title: 'WaneYen - Nurse Scheduling System',
-  description: 'Blessed Schedules for a Better Life - A modern nurse scheduling system',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
-}
+const baiJamjuree = Bai_Jamjuree ({
+  subsets: ["thai", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-sans",
+})
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased">
+     <html lang="th" className={baiJamjuree.variable}>
+      <body className="antialiased font-sans">
         <AuthProvider>
-          <WardProvider>{children}</WardProvider>
+          <WardProvider>
+            {children}
+          </WardProvider>
         </AuthProvider>
       </body>
     </html>

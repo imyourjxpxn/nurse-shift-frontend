@@ -32,7 +32,7 @@ export function WaneYenLogo({ className, size = 'md' }: WaneYenLogoProps) {
         />
       </svg>
       <span className={cn('font-bold text-foreground', sizeClasses[size])}>
-        WaneYen
+        เวรเย็น
       </span>
     </div>
   )

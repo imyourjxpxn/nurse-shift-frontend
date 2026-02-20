@@ -39,7 +39,7 @@ export function UnsavedChangesModal({
             className="rounded-full bg-transparent"
             onClick={onDiscard}
           >
-            ไม่บันทึก
+            ไม่บันทึกและย้อนกลับ
           </Button>
           <Button
             className="rounded-full bg-sky-500 text-white hover:bg-sky-600"

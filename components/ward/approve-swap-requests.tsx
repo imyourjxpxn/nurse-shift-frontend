@@ -107,8 +107,8 @@ export function ApproveSwapRequestsModal({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-4 shrink-0 border-b-0">
-          <SheetTitle className="text-xl font-bold text-blue-600">
-            My Approve Swap request
+          <SheetTitle className="text-xl font-bold text-black">
+            {'อนุมัติคำขอแลกเวร'}
           </SheetTitle>
         </SheetHeader>
 
@@ -129,7 +129,7 @@ export function ApproveSwapRequestsModal({
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-medium text-foreground">
                       <span className="font-semibold">{req.fromNurseName}</span>
-                      {' send Swap request'}
+                      {' ส่งคำขอแลกเวร'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDateTime(req.createdAt)}
@@ -141,14 +141,14 @@ export function ApproveSwapRequestsModal({
                     <div className="flex items-center gap-3 px-4 py-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-muted-foreground">
-                          {`${req.fromNurseName} shift`}
+                          {`${req.fromNurseName}`}
                         </p>
                         <p className="text-sm font-medium text-foreground">
                           {`${req.fromDate}/${req.month} ${req.fromShiftCode}`}
                         </p>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">Your shift</p>
+                        <p className="text-xs text-muted-foreground">ขอแลกเวรของคุณ</p>
                         <p className="text-sm font-medium text-foreground">
                           {`${req.toDate}/${req.month} ${req.toShiftCode}`}
                         </p>

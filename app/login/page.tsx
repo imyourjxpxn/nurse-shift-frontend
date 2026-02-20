@@ -44,7 +44,7 @@ export default function LoginPage() {
         
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-2xl font-medium italic text-foreground">
-            Blessed Schedules for a Better Life
+            ช่วยให้คุณจัดตารางเวรพยาบาลได้ง่ายขึ้น
           </h1>
           <p className="text-muted-foreground">
             Sign in with your Google account to continue

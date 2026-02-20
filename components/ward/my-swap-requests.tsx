@@ -104,8 +104,8 @@ export function MySwapRequestsModal({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-4 shrink-0 border-b-0">
-          <SheetTitle className="text-xl font-bold text-blue-600">
-            My Swap request
+          <SheetTitle className="text-xl font-bold text-black">
+            คำขอแลกเวรของฉัน
           </SheetTitle>
         </SheetHeader>
 
@@ -136,25 +136,25 @@ export function MySwapRequestsModal({
                   <div className="rounded-lg border border-border bg-card">
                     <div className="grid grid-cols-4 gap-2 px-4 py-3">
                       <div>
-                        <p className="text-xs text-muted-foreground">Your shift</p>
+                        <p className="text-xs text-muted-foreground">เวรของฉัน</p>
                         <p className="text-sm font-medium text-foreground">
                           {`${req.fromDate}/${req.month} ${req.fromShiftCode}`}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Send To</p>
+                        <p className="text-xs text-muted-foreground">ส่งถึง</p>
                         <p className="text-sm font-medium text-foreground">
                           {req.toNurseName}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Shift to Swap</p>
+                        <p className="text-xs text-muted-foreground">เวรที่ต้องการแลก</p>
                         <p className="text-sm font-medium text-foreground">
                           {`${req.toDate}/${req.month} ${req.toShiftCode}`}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Approve Status</p>
+                        <p className="text-xs text-muted-foreground">สถานะการอนุมัติ</p>
                         {req.status === 'pending' ? (
                           <button
                             onClick={() => handleCancel(req.id)}

@@ -76,7 +76,7 @@ export function WardSuccessModal({
 
         <div className="mt-2 rounded-lg bg-sky-50 p-4">
           <p className="text-sm text-sky-700">
-            <span className="font-semibold">สำคัญ:</span> แชร์รหัสผ่านนี้ให้พยาบาลที่จำเป็นต้องเข้าร่วม โดยรหัสผ่านสามารถเข้าดูได้ในหน้าวอร์ดของคุณ
+            <span className="font-semibold">สำคัญ:</span> แชร์รหัสผ่านนี้ให้เฉพาะพยาบาลที่จำเป็นต้องเข้าร่วม ไม่แชร์รหัสนี้ในที่สาธารณะหรือกับผู้ที่ไม่เกี่ยวข้อง เพื่อป้องกันการเข้าถึงวอร์ดโดยไม่ได้รับอนุญาต
           </p>
         </div>
 

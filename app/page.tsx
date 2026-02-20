@@ -6,17 +6,15 @@ import { useAuth } from '@/lib/auth-context'
 
 export default function RootPage() {
   const router = useRouter()
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
-    if (isLoading) return
-
     if (isAuthenticated) {
       router.replace('/home')
     } else {
       router.replace('/login')
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, router])
 
   return null
 }

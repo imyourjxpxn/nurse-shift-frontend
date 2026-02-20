@@ -82,7 +82,7 @@ export default function RegisterPage() {
           className="mb-6 inline-flex items-center gap-2 text-sm text-sky-600 hover:underline"
         >
           <ArrowLeft className="size-4" />
-          Back to Sign In
+          ย้อนกลับ
         </Link>
 
         <div className="flex flex-col items-center gap-6">
@@ -90,10 +90,10 @@ export default function RegisterPage() {
 
           <div className="w-full">
             <h1 className="mb-2 text-2xl font-bold text-foreground">
-              Complete Your Profile
+              ลงทะเบียนผู้ใช้ใหม่
             </h1>
             <p className="text-muted-foreground">
-              Please fill in your details to complete registration
+              กรุณากรอกข้อมูลของคุณเพื่อทำการลงทะเบียน
             </p>
           </div>
 
@@ -101,7 +101,7 @@ export default function RegisterPage() {
             {/* Email field (read-only) */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm text-muted-foreground">
-                Email (from Google)
+                อีเมล
               </Label>
               <Input
                 id="email"
@@ -115,14 +115,14 @@ export default function RegisterPage() {
             {/* Full Name field */}
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm text-sky-600">
-                Full Name <span className="text-destructive">*</span>
+                ชื่อ-นามสกุล <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="fullName"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
+                placeholder="กรอกชื่อ-นามสกุลของคุณ"
                 className="border-sky-300 focus-visible:border-sky-500 focus-visible:ring-sky-500/30"
               />
             </div>
@@ -130,11 +130,11 @@ export default function RegisterPage() {
             {/* Hospital Select */}
             <div className="space-y-2">
               <Label htmlFor="hospital" className="text-sm text-sky-600">
-                Hospital <span className="text-destructive">*</span>
+                โรงพยาบาล <span className="text-destructive">*</span>
               </Label>
               <Select value={selectedHospital} onValueChange={setSelectedHospital}>
                 <SelectTrigger className="w-full border-border">
-                  <SelectValue placeholder="Select Hospital" />
+                  <SelectValue placeholder="เลือกโรงพยาบาล" />
                 </SelectTrigger>
                 <SelectContent>
                   {hospitals.map((hospital) => (
@@ -148,21 +148,21 @@ export default function RegisterPage() {
 
             {/* About Roles Info Box */}
             <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <h3 className="mb-2 font-semibold text-foreground">About Roles</h3>
+              <h3 className="mb-2 font-semibold text-foreground">เกี่ยวกับหน้าที่ในระบบ</h3>
               <p className="mb-2 text-sm text-muted-foreground">
-                Your role is determined per ward:
+                หน้าที่ของคุณในระบบจะถูกกำหนดโดยการกระทำของคุณหลังจากนี้:
               </p>
               <ul className="space-y-1 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <span className="text-muted-foreground">•</span>
                   <span>
-                    Create a ward → You become <strong className="text-foreground">Head Nurse</strong>
+                    สร้างวอร์ด → คุณจะเป็น <strong className="text-foreground">หัวหน้าพยาบาล</strong> ในระบบ
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-muted-foreground">•</span>
                   <span>
-                    Join a ward → You become <strong className="text-foreground">Nurse</strong>
+                    เข้าร่วมวอร์ด → คุณจะเป็น <strong className="text-foreground">พยาบาล</strong> ในระบบ
                   </span>
                 </li>
               </ul>
@@ -191,11 +191,11 @@ export default function RegisterPage() {
                 )}
               </span>
               <span className="text-sm text-muted-foreground">
-                {'I agree to '}
-                <span className="text-sky-600 underline">Terms of Service</span>
+                {'ฉันยอมรับ '}
+                <span className="text-sky-600 underline">เงื่อนไขการใช้งาน</span>
                 {acceptedTerms
-                  ? <span className="ml-1 text-xs text-green-600 font-medium">(Accepted)</span>
-                  : <span className="ml-1 text-xs text-destructive font-medium">(Required)</span>
+                  ? <span className="ml-1 text-xs text-green-600 font-medium">(ยอมรับแล้ว)</span>
+                  : <span className="ml-1 text-xs text-destructive font-medium">(กรุณากดยอมรับ)</span>
                 }
               </span>
             </button>
@@ -223,11 +223,11 @@ export default function RegisterPage() {
                 )}
               </span>
               <span className="text-sm text-muted-foreground">
-                {'I acknowledge '}
-                <span className="text-sky-600 underline">Privacy Policy (PDPA)</span>
+                {'ฉันยอมรับ '}
+                <span className="text-sky-600 underline">นโยบายความเป็นส่วนตัว (PDPA)</span>
                 {acceptedPrivacy
-                  ? <span className="ml-1 text-xs text-green-600 font-medium">(Accepted)</span>
-                  : <span className="ml-1 text-xs text-destructive font-medium">(Required)</span>
+                  ? <span className="ml-1 text-xs text-green-600 font-medium">(ยอมรับแล้ว)</span>
+                  : <span className="ml-1 text-xs text-destructive font-medium">(กรุณากดยอมรับ)</span>
                 }
               </span>
             </button>
@@ -238,7 +238,7 @@ export default function RegisterPage() {
               disabled={!isFormValid}
               className="h-12 w-full bg-sky-400 text-white hover:bg-sky-500 disabled:bg-sky-300 disabled:opacity-70"
             >
-              Complete Registration
+              ยืนยันการลงทะเบียน
             </Button>
           </form>
         </div>

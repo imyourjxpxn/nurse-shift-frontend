@@ -250,10 +250,10 @@ export function CreateSwapRequestModal({
       >
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="text-xl font-bold text-foreground">
-            Create Swap request
+            สร้างคำขอแลกเวร
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Scheduling your co-worker.
+            เลือกพยาบาลและวันที่ที่ต้องการแลกเวร พร้อมระบุเหตุผล แล้วกด Submit เพื่อส่งคำขอ
           </p>
         </DialogHeader>
 
@@ -370,13 +370,13 @@ export function CreateSwapRequestModal({
             className="min-w-[120px] rounded-full border-red-300 text-red-500 hover:bg-red-50 bg-transparent"
             onClick={() => onOpenChange(false)}
           >
-            Cancel
+            ยกเลิก
           </Button>
           <Button
             className="min-w-[120px] rounded-full bg-blue-600 text-white hover:bg-blue-700"
             onClick={handleSubmit}
           >
-            Submit
+            ส่งคำขอ
           </Button>
         </div>
       </DialogContent>

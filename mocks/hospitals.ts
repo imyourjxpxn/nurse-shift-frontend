@@ -4,9 +4,9 @@ export interface Hospital {
 }
 
 export const mockHospitals: Hospital[] = [
-  { id: '1', name: 'Inburi Hospital' },
-  { id: '2', name: 'Bangkok General Hospital' },
-  { id: '3', name: 'Siriraj Hospital' },
-  { id: '4', name: 'Ramathibodi Hospital' },
-  { id: '5', name: 'Chulalongkorn Hospital' },
+  { id: '1', name: 'โรงพยาบาลอินท์บุรี' },
+  { id: '2', name: 'โรงพยาบาลกรุุงเทพ' },
+  { id: '3', name: 'โรงพยาบาลศิริราช' },
+  { id: '4', name: 'โรงพยาบาลรามาธิบดี' },
+  { id: '5', name: 'โรงพยาบาลจุฬาลงกรณ์' },
 ]

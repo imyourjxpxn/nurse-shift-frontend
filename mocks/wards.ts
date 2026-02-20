@@ -24,9 +24,9 @@ function s(date: number, shifts: { M: boolean; A: boolean; N: boolean; E: boolea
 export function createMockMedWard() {
   return {
     id: MOCK_WARD_ID,
-    name: 'MED',
+    name: 'อายุรกรรมชาย',
     hospitalId: '1',
-    hospitalName: 'Inburi Hospital',
+    hospitalName: 'โรงพยาบาลอินท์บุรี',
     code: 'MED12345',
     createdById: 'mock-head-nurse',
     createdByName: 'พว.สมหญิง จริงใจ',

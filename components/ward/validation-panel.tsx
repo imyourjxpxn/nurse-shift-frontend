@@ -31,7 +31,7 @@ export function ValidationPanel({ open, onOpenChange, warnings }: ValidationPane
         <SheetHeader className="shrink-0 border-b border-border bg-amber-50 px-6 pt-6 pb-4">
           <SheetTitle className="flex items-center gap-2.5 text-base font-bold text-amber-900">
             <AlertTriangle className="size-5 text-amber-600" />
-            {'Validation Warnings (' + warnings.length + ')'}
+            {'แสดงข้อผิดพลาด (' + warnings.length + ')'}
           </SheetTitle>
         </SheetHeader>
 
@@ -79,7 +79,7 @@ export function ValidationPanel({ open, onOpenChange, warnings }: ValidationPane
                   onClick={() => setShowAll(true)}
                   className="w-full rounded-lg border border-amber-300 bg-amber-50 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100"
                 >
-                  {'Show All (' + warnings.length + ' warnings)'}
+                  {'แสดงทั้งหมด (' + warnings.length + ' แจ้งเตือน)'}
                 </button>
               ) : (
                 <button
@@ -95,7 +95,7 @@ export function ValidationPanel({ open, onOpenChange, warnings }: ValidationPane
 
           {!showAll && hasMore && (
             <p className="mt-3 text-center text-xs text-muted-foreground">
-              {'Showing ' + INITIAL_VISIBLE + ' of ' + warnings.length + ' warnings'}
+              {'แสดง ' + INITIAL_VISIBLE + ' จาก ' + warnings.length + ' แจ้งเตือน'}
             </p>
           )}
         </div>

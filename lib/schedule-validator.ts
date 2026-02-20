@@ -6,6 +6,7 @@ export type IssueType = 'daily' | 'consecutive'
 export interface ValidationIssue {
   type: IssueType
   message: string
+  day?: number
 }
 
 const MAX_CONSECUTIVE_HOURS = 16
@@ -62,7 +63,7 @@ export function validateSchedule(ward: Ward): ValidationIssue[] {
 
     // Emergency ต้องมีอย่างน้อย 1 คน
     if (emergencyCount === 0) {
-      problems.push('ไม่มีเวร Emergency (Standby)')
+      problems.push('ไม่มีเวร Emergency')
     }
 
     // ตรวจ M/A/N assign ไม่ครบ
@@ -77,7 +78,7 @@ export function validateSchedule(ward: Ward): ValidationIssue[] {
 
       if (assigned < shiftConfig.nursesRequired) {
         problems.push(
-          `เวร${shiftConfig.name}ไม่ครบ (${assigned}/${shiftConfig.nursesRequired})`,
+          `${shiftConfig.name}ไม่ครบ (${assigned}/${shiftConfig.nursesRequired})`,
         )
       }
     }
@@ -85,7 +86,8 @@ export function validateSchedule(ward: Ward): ValidationIssue[] {
     if (problems.length > 0) {
       warnings.push({
         type: 'daily',
-        message: `วันที่ ${d} ${problems.join(' และ ')}`,
+        day: d, // ✅ ใส่ day ตรงนี้
+        message: `วันที่ ${d} ${problems.join(', ')}`,
       })
     }
   }

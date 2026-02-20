@@ -282,15 +282,14 @@ export default function WardPage() {
       <AlertDialog open={!!removeMemberTarget} onOpenChange={(open) => !open && setRemoveMemberTarget(null)}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Member</AlertDialogTitle>
+            <AlertDialogTitle>ยืนยันการลบสมาชิก</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
-                  {'Are you sure you want to remove '}
-                  <span className="font-semibold text-foreground">{removeMemberTarget?.name}</span>
-                  {' from this ward?'}
+                  {'คุณแน่ใจหรือไม่ว่าต้องการลบ '}
+                  <span className="font-text-foreground">{removeMemberTarget?.name}</span>
                 </p>
-                <p>This will remove them from the schedule and cancel all their pending swap requests. Approved and rejected swap history will be preserved.</p>
+                <p>ระบบจะยกเลิกคำขอแลกเวรที่มีทั้งหมดของสมาชิกนี้ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -299,13 +298,13 @@ export default function WardPage() {
               onClick={() => setRemoveMemberTarget(null)}
               className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
             >
-              Cancel
+              ยกเลิก
             </AlertDialogAction>
             <AlertDialogAction
               onClick={handleRemoveMember}
               className="bg-red-600 text-white hover:bg-red-700"
             >
-              Remove
+              ลบ
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -330,23 +329,22 @@ export default function WardPage() {
       <AlertDialog open={!!pendingSwapPopup} onOpenChange={(open) => !open && setPendingSwapPopup(null)}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Swap Request in Progress</AlertDialogTitle>
+            <AlertDialogTitle>พบคำขอแลกเวรที่กำลังดำเนินการอยู่</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
-                  {'This shift is currently involved in a pending swap request between '}
-                  <span className="font-semibold text-foreground">{pendingSwapPopup?.fromNurseName}</span>
-                  {' and '}
-                  <span className="font-semibold text-foreground">{pendingSwapPopup?.toNurseName}</span>
-                  {'.'}
+                  {'ขณะนี้มีการดำเนินการคำขอแลกเวรระหว่าง '}
+                  <span className="font-text-foreground">{pendingSwapPopup?.fromNurseName}</span>
+                  {' และ '}
+                  <span className="font-text-foreground">{pendingSwapPopup?.toNurseName} </span>
+                   คุณไม่สามารถกระทำการใดๆในช่องนี้ต่อได้จนกว่าคำขอแลกเวรจะเสร็จสิ้น
                 </p>
-                <p>Approval is in progress. You cannot create another request.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setPendingSwapPopup(null)}>
-              OK
+              ตกลง
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

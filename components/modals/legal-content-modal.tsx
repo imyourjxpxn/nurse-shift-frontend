@@ -69,13 +69,6 @@ export function LegalContentModal({
           </div>
         </div>
 
-        {/* Scroll hint */}
-        {!hasScrolledToEnd && (
-          <div className="border-t px-6 py-3 text-center text-xs text-muted-foreground">
-            Scroll to the bottom to enable the Accept button
-          </div>
-        )}
-
         <DialogFooter className="border-t px-6 py-4">
           <Button
             variant="outline"

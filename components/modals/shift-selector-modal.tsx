@@ -177,7 +177,7 @@ function ShiftSelectorContent({
         {/* Special statuses */}
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            สถานะพิเศษ (เลือกได้ 1 อย่าง)
+            อื่นๆ (เลือกได้ 1 รายการ)
           </p>
 
           <div className="grid grid-cols-2 gap-2">
@@ -244,14 +244,14 @@ function ShiftSelectorContent({
             className="flex-1 rounded-full border-red-300 text-red-500 hover:bg-red-50"
             onClick={onClear}
           >
-            Clear
+            ยกเลิก
           </Button>
 
           <Button
             className="flex-1 rounded-full bg-blue-600 text-white hover:bg-blue-700"
             onClick={onConfirm}
           >
-            Select
+            ยืนยัน
           </Button>
         </div>
       </div>

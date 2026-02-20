@@ -16,7 +16,7 @@ export function ValidationButton({ warnings, onClick }: ValidationButtonProps) {
       onClick={onClick}
       className="fixed right-6 top-20 z-40 rounded-lg bg-amber-400 px-4 py-2 text-sm font-bold text-amber-950 shadow-lg transition-colors hover:bg-amber-500 active:bg-amber-600"
     >
-      {'Validation : ' + warnings.length + ' warning' + (warnings.length !== 1 ? 's' : '')}
+      {'พบข้อผิดพลาด : ' + warnings.length + ' แจ้งเตือน' }
     </button>
   )
 }

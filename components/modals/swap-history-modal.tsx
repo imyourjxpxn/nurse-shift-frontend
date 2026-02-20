@@ -81,8 +81,8 @@ export function SwapHistoryModal({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-4 shrink-0 border-b-0">
-          <SheetTitle className="text-xl font-bold text-blue-600">
-            History Log
+          <SheetTitle className="text-xl font-bold text-black">
+            ประวัติการแลกเวร
           </SheetTitle>
         </SheetHeader>
 
@@ -99,7 +99,7 @@ export function SwapHistoryModal({
             <div className="flex flex-col gap-4">
               {requests.map((req) => {
                 const isOwnRequest = req.fromNurseId === currentMemberId
-                const fromLabel = isOwnRequest ? 'Your shift' : `${req.fromNurseName} shift`
+                const fromLabel = isOwnRequest ? 'Your shift' : `${req.fromNurseName}`
 
                 return (
                   <div key={req.id}>
@@ -107,7 +107,7 @@ export function SwapHistoryModal({
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-sm font-medium text-foreground">
                         <span className="font-semibold">{req.fromNurseName}</span>
-                        {' send Swap request'}
+                        {' ส่งคำขอแลกเวร'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {formatDateTime(req.createdAt)}
@@ -124,19 +124,19 @@ export function SwapHistoryModal({
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Send To</p>
+                          <p className="text-xs text-muted-foreground">ส่งถึง</p>
                           <p className="text-sm font-medium text-foreground">
                             {req.toNurseName}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Shift to Swap</p>
+                          <p className="text-xs text-muted-foreground">เวรที่จะแลก</p>
                           <p className="text-sm font-medium text-foreground">
                             {`${req.toDate}/${req.month} ${req.toShiftCode}`}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Approve Status</p>
+                          <p className="text-xs text-muted-foreground">สถานะการอนุมัติ</p>
                           <p className="text-sm font-medium text-green-600">
                             Approved
                           </p>

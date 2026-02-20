@@ -75,7 +75,7 @@ export default function ProfilePage() {
           {/* Display name */}
           <div className="mb-4 rounded-lg border border-border p-4">
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Display Name
+              ชื่อแสดง
             </label>
             {editing ? (
               <div className="flex items-center gap-2">
@@ -138,7 +138,7 @@ export default function ProfilePage() {
           {/* Hospital */}
           <div className="rounded-lg border border-border p-4">
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Hospital
+              โรงพยาบาล
             </label>
             <div className="flex items-center gap-2">
               <Building2 className="size-4 text-muted-foreground" />

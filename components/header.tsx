@@ -33,7 +33,7 @@ export function Header() {
             className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <LogOut className="size-4" />
-            <span>Logout</span>
+            <span>ออกจากระบบ</span>
           </button>
         </div>
       </div>
