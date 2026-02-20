@@ -1,5 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
 import { Header } from '@/components/header'
 import { WardHeader } from '@/components/ward/ward-header'
 import { HeadNurseToolbar } from '@/components/ward/head-nurse-toolbar'
@@ -26,9 +29,15 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog'
+
 import { useWardPage } from '@/hooks/use-ward-page'
 
 export default function WardPage() {
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
+  const wardPage = useWardPage()
+
   const {
     user,
     isAuthenticated,
@@ -55,19 +64,14 @@ export default function WardPage() {
     handleBackNavigation,
     handleShiftConfigChange,
     handleNursesRequiredChange,
-    handleCellClick,
     handleShiftSelect,
     handleMonthChange,
     handleYearChange,
     handleRenameWard,
     handleDeleteWard,
-
-    // Remove member
     removeMemberTarget,
     setRemoveMemberTarget,
     handleRemoveMember,
-
-    // Swap modals
     createSwapOpen,
     setCreateSwapOpen,
     mySwapRequestsOpen,
@@ -84,44 +88,31 @@ export default function WardPage() {
     handleApproveSwap,
     swapHistoryOpen,
     setSwapHistoryOpen,
+  } = wardPage
 
-    router,
-  } = useWardPage()
+  // ✅ Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  // --- Guard renders ---
+  // ✅ Redirect safely (no render side-effects)
+  useEffect(() => {
+    if (mounted && isHydrated && user && !userRole) {
+      router.replace('/home')
+    }
+  }, [mounted, isHydrated, user, userRole, router])
+
+  // --- Safe guards ---
+  if (!mounted) return null
   if (!isAuthenticated || !user) return null
+  if (!isHydrated) return null
+  if (!ward || !displayWard) return null
+  if (!userRole) return null
 
-  if (!isHydrated) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="mx-auto max-w-7xl px-4 py-6">
-          <p className="text-muted-foreground">Loading...</p>
-        </main>
-      </div>
-    )
-  }
-
-  if (!ward || !displayWard) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="mx-auto max-w-7xl px-4 py-6">
-          <p className="text-muted-foreground">Ward not found</p>
-        </main>
-      </div>
-    )
-  }
-
-  if (!userRole) {
-    router.replace('/home')
-    return null
-  }
-
-  // --- Main layout ---
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
       <main className="mx-auto max-w-7xl px-4 py-6 pb-20">
         <WardHeader
           hospitalName={ward.hospitalName}
@@ -137,7 +128,6 @@ export default function WardPage() {
           onRename={handleRenameWard}
         />
 
-        {/* Role-based toolbar */}
         <div className="mb-4 flex flex-wrap items-start justify-end gap-4">
           {isHeadNurse ? (
             <HeadNurseToolbar
@@ -181,13 +171,16 @@ export default function WardPage() {
           isHeadNurse={isHeadNurse}
           isCreator={isCreator}
           onCellClick={handleNurseCellClick}
-          onRemoveMember={(memberId, memberName) => setRemoveMemberTarget({ id: memberId, name: memberName })}
+          onRemoveMember={(id, name) =>
+            setRemoveMemberTarget({ id, name })
+          }
         />
 
         <ShiftSummary ward={displayWard} />
       </main>
 
-      {/* Modals */}
+      {/* --- Modals --- */}
+
       <ShiftSelectorModal
         open={shiftSelectorOpen}
         onOpenChange={setShiftSelectorOpen}
@@ -217,14 +210,12 @@ export default function WardPage() {
         }}
       />
 
-      {/* Swap validation toast */}
       {swapValidationMsg && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-red-600 px-6 py-3 text-sm font-medium text-white shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-red-600 px-6 py-3 text-sm font-medium text-white shadow-lg">
           {swapValidationMsg}
         </div>
       )}
-
-      {/* Swap modals (nurse role) */}
+      
       {currentMember && (
         <>
           <CreateSwapRequestModal
@@ -261,7 +252,6 @@ export default function WardPage() {
         </>
       )}
 
-      {/* Swap History sidebar (head nurse only) */}
       <SwapHistoryModal
         open={swapHistoryOpen}
         onOpenChange={setSwapHistoryOpen}
@@ -271,32 +261,28 @@ export default function WardPage() {
         year={ward.year}
       />
 
-      {/* Remove member confirmation */}
-      <AlertDialog open={!!removeMemberTarget} onOpenChange={(open) => !open && setRemoveMemberTarget(null)}>
-        <AlertDialogContent className="sm:max-w-md">
+      {/* Remove member dialog */}
+      <AlertDialog
+        open={!!removeMemberTarget}
+        onOpenChange={(open) => !open && setRemoveMemberTarget(null)}
+      >
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Member</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  {'Are you sure you want to remove '}
-                  <span className="font-semibold text-foreground">{removeMemberTarget?.name}</span>
-                  {' from this ward?'}
-                </p>
-                <p>This will remove them from the schedule and cancel all their pending swap requests. Approved and rejected swap history will be preserved.</p>
-              </div>
+            <AlertDialogDescription>
+              Are you sure you want to remove{' '}
+              <strong>{removeMemberTarget?.name}</strong>?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
+          <AlertDialogFooter>
             <AlertDialogAction
               onClick={() => setRemoveMemberTarget(null)}
-              className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
             >
               Cancel
             </AlertDialogAction>
             <AlertDialogAction
               onClick={handleRemoveMember}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-red-600 text-white"
             >
               Remove
             </AlertDialogAction>
@@ -304,26 +290,24 @@ export default function WardPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Pending swap popup */}
-      <AlertDialog open={!!pendingSwapPopup} onOpenChange={(open) => !open && setPendingSwapPopup(null)}>
-        <AlertDialogContent className="sm:max-w-md">
+      {/* Pending swap dialog */}
+      <AlertDialog
+        open={!!pendingSwapPopup}
+        onOpenChange={(open) => !open && setPendingSwapPopup(null)}
+      >
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Swap Request in Progress</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  {'This shift is currently involved in a pending swap request between '}
-                  <span className="font-semibold text-foreground">{pendingSwapPopup?.fromNurseName}</span>
-                  {' and '}
-                  <span className="font-semibold text-foreground">{pendingSwapPopup?.toNurseName}</span>
-                  {'.'}
-                </p>
-                <p>Approval is in progress. You cannot create another request.</p>
-              </div>
+            <AlertDialogDescription>
+              This shift is involved in a pending swap between{' '}
+              <strong>{pendingSwapPopup?.fromNurseName}</strong> and{' '}
+              <strong>{pendingSwapPopup?.toNurseName}</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setPendingSwapPopup(null)}>
+            <AlertDialogAction
+              onClick={() => setPendingSwapPopup(null)}
+            >
               OK
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -332,5 +316,3 @@ export default function WardPage() {
     </div>
   )
 }
-
-
