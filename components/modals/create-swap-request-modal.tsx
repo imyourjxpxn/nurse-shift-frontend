@@ -26,9 +26,11 @@ interface WardMember {
   userId: string
 }
 
+interface DayShifts { M: boolean; A: boolean; N: boolean; E: boolean; L: boolean; O: boolean }
+
 interface ScheduleEntry {
   date: number
-  shiftCode: string
+  shifts: DayShifts
 }
 
 interface NurseSchedule {
@@ -73,6 +75,9 @@ function getDaysInMonth(month: number, year: number): number {
   return new Date(year, month, 0).getDate()
 }
 
+const SLOT_TO_CODE: Partial<Record<keyof DayShifts, string>> = { M: 'ช', A: 'บ', N: 'ด' }
+
+/** Returns the first active shift code for a member on a date (for swap compatibility) */
 function getShiftForMemberOnDate(
   schedules: NurseSchedule[],
   memberId: string,
@@ -81,7 +86,11 @@ function getShiftForMemberOnDate(
   const schedule = schedules.find((s) => s.memberId === memberId)
   if (!schedule) return ''
   const entry = schedule.entries.find((e) => e.date === date)
-  return entry?.shiftCode || ''
+  if (!entry) return ''
+  for (const key of ['M', 'A', 'N'] as (keyof DayShifts)[]) {
+    if (entry.shifts[key]) return SLOT_TO_CODE[key] ?? ''
+  }
+  return ''
 }
 
 function parseDateInput(value: string, month: number, year: number): number | null {

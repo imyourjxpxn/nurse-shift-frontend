@@ -2,7 +2,8 @@ import { MOCK_WARD_ID, defaultShifts, createMockMedWard } from '@/mocks/wards'
 
 // Re-declare minimal types inline to avoid cross-module type resolution issues
 // These match the canonical types in /types/index.ts
-interface ScheduleEntry { date: number; shiftCode: string }
+interface DayShifts { M: boolean; A: boolean; N: boolean; E: boolean; L: boolean; O: boolean }
+interface ScheduleEntry { date: number; shifts: DayShifts }
 interface NurseSchedule { memberId: string; entries: ScheduleEntry[] }
 interface ShiftConfig { name: string; code: string; startHour: string; startMinute: string; endHour: string; endMinute: string; nursesRequired: number }
 interface WardMember { id: string; name: string; role: 'head_nurse' | 'nurse'; userId: string }
@@ -269,14 +270,17 @@ export async function updateShiftConfig(wardId: string, shifts: ShiftConfig[]): 
   if (ward) saveMonthSnapshot(ward)
 }
 
+/** Update a single day's shifts for a nurse. Pass the full DayShifts object.
+ *  If all shifts are false the entry is removed. */
 export async function updateSchedule(
   wardId: string,
   memberId: string,
   date: number,
-  shiftCode: string,
+  dayShifts: DayShifts,
 ): Promise<void> {
   await new Promise((r) => setTimeout(r, 50))
 
+  const allOff = !dayShifts.M && !dayShifts.A && !dayShifts.N && !dayShifts.E && !dayShifts.L && !dayShifts.O
   const wards = getWards()
   setWards(
     wards.map((w) => {
@@ -284,22 +288,23 @@ export async function updateSchedule(
 
       const idx = w.schedules.findIndex((s) => s.memberId === memberId)
       if (idx === -1) {
+        if (allOff) return w
         return {
           ...w,
-          schedules: [...w.schedules, { memberId, entries: [{ date, shiftCode }] }],
+          schedules: [...w.schedules, { memberId, entries: [{ date, shifts: dayShifts }] }],
         }
       }
 
       const schedule = { ...w.schedules[idx] }
       const eIdx = schedule.entries.findIndex((e) => e.date === date)
 
-      if (shiftCode === '') {
+      if (allOff) {
         schedule.entries = schedule.entries.filter((e) => e.date !== date)
       } else if (eIdx === -1) {
-        schedule.entries = [...schedule.entries, { date, shiftCode }]
+        schedule.entries = [...schedule.entries, { date, shifts: dayShifts }]
       } else {
         schedule.entries = schedule.entries.map((e) =>
-          e.date === date ? { ...e, shiftCode } : e
+          e.date === date ? { ...e, shifts: dayShifts } : e
         )
       }
 
@@ -362,9 +367,27 @@ export async function ensureUserInMockWard(
   )
 }
 
-/** Swap two shift entries after an approval:
- *  Nurse A (fromMemberId) on fromDate gets toShiftCode
- *  Nurse B (toMemberId) on toDate gets fromShiftCode */
+/** Map a legacy shift code (ช, บ, ด) to the DayShifts slot key */
+function shiftCodeToSlot(code: string): keyof DayShifts | null {
+  if (code === 'ช') return 'M'
+  if (code === 'บ') return 'A'
+  if (code === 'ด') return 'N'
+  return null
+}
+
+/** Get current DayShifts for a member on a date, or a blank default */
+function getCurrentDayShifts(wardId: string, memberId: string, date: number): DayShifts {
+  const blank: DayShifts = { M: false, A: false, N: false, E: false, L: false, O: false }
+  const ward = getWards().find((w) => w.id === wardId)
+  if (!ward) return blank
+  const schedule = ward.schedules.find((s) => s.memberId === memberId)
+  if (!schedule) return blank
+  const entry = schedule.entries.find((e) => e.date === date)
+  return entry ? { ...entry.shifts } : blank
+}
+
+/** Swap two shift entries after an approval.
+ *  Toggles the specific shift slot off for one nurse and on for the other. */
 export async function applySwapToSchedule(
   wardId: string,
   fromMemberId: string,
@@ -374,11 +397,20 @@ export async function applySwapToSchedule(
   fromShiftCode: string,
   toShiftCode: string,
 ): Promise<void> {
-  // Set Nurse A's shift on fromDate to what Nurse B had (toShiftCode)
-  await updateSchedule(wardId, fromMemberId, fromDate, toShiftCode)
-  // Set Nurse B's shift on toDate to what Nurse A had (fromShiftCode)
-  await updateSchedule(wardId, toMemberId, toDate, fromShiftCode)
-  // updateSchedule already syncs month snapshot, so no extra call needed
+  const fromSlot = shiftCodeToSlot(fromShiftCode)
+  const toSlot = shiftCodeToSlot(toShiftCode)
+
+  // Nurse A on fromDate: remove fromShift, add toShift
+  const nurseAShifts = getCurrentDayShifts(wardId, fromMemberId, fromDate)
+  if (fromSlot) nurseAShifts[fromSlot] = false
+  if (toSlot) nurseAShifts[toSlot] = true
+  await updateSchedule(wardId, fromMemberId, fromDate, nurseAShifts)
+
+  // Nurse B on toDate: remove toShift, add fromShift
+  const nurseBShifts = getCurrentDayShifts(wardId, toMemberId, toDate)
+  if (toSlot) nurseBShifts[toSlot] = false
+  if (fromSlot) nurseBShifts[fromSlot] = true
+  await updateSchedule(wardId, toMemberId, toDate, nurseBShifts)
 }
 
 // ---------------------------------------------------------------------------

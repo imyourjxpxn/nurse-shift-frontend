@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useWard } from '@/lib/ward-context'
 import { useUnsavedChanges } from './use-unsaved-changes'
-import type { ShiftConfig, NurseSchedule, Ward } from '@/lib/types'
+import type { ShiftConfig, NurseSchedule, Ward, DayShifts } from '@/lib/types'
+import { emptyDayShifts, hasAnyShift } from '@/lib/types'
 import { createSwapRequest, getPendingSwapCells, approveSwapRequest, cancelPendingSwapsForMember } from '@/services/swap.service'
+import { validateSchedule, type ValidationIssue } from '@/lib/schedule-validator'
 
 export function useWardPage() {
   const routeParams = useParams<{ id: string }>()
@@ -57,8 +59,23 @@ export function useWardPage() {
   const [selectedCell, setSelectedCell] = useState<{
     memberId: string
     date: number
-    currentShift: string
+    currentShifts: DayShifts
   } | null>(null)
+
+  // Validation warnings -- per month/year cache
+  // null = never validated for this month, [] = validated with 0 warnings
+  const warningCacheRef = useRef<Map<string, ValidationIssue[]>>(new Map())
+  const currentMonthKey = ward ? `${ward.month}-${ward.year}` : ''
+  const [validationWarnings, setValidationWarnings] = useState<ValidationIssue[] | null>(null)
+  const [validationPanelOpen, setValidationPanelOpen] = useState(false)
+
+  // Restore cached warnings when month/year changes (null if never validated)
+  useEffect(() => {
+    if (!currentMonthKey) return
+    const cached = warningCacheRef.current.get(currentMonthKey)
+    setValidationWarnings(cached ?? null)
+    setValidationPanelOpen(false)
+  }, [currentMonthKey])
 
   // Remove member confirmation
   const [removeMemberTarget, setRemoveMemberTarget] = useState<{ id: string; name: string } | null>(null)
@@ -81,11 +98,20 @@ export function useWardPage() {
   // --- Actions ---
   const handleSave = useCallback(() => {
     if (!ward || !draftShifts || !draftSchedules) return
+
+    // Run validation (warnings only, never blocks save)
+    const wardForValidation = { ...ward, shifts: draftShifts, schedules: draftSchedules }
+    const warnings = validateSchedule(wardForValidation)
+    setValidationWarnings(warnings)
+    // Store in per-month cache
+    warningCacheRef.current.set(`${ward.month}-${ward.year}`, warnings)
+
+    // Proceed with save regardless of warnings
     updateShiftConfig(ward.id, draftShifts)
     clearSchedule(ward.id)
     for (const schedule of draftSchedules) {
       for (const entry of schedule.entries) {
-        updateSchedule(ward.id, schedule.memberId, entry.date, entry.shiftCode)
+        updateSchedule(ward.id, schedule.memberId, entry.date, entry.shifts)
       }
     }
     markAsSaved()
@@ -139,48 +165,51 @@ export function useWardPage() {
     [draftShifts, setDraftShifts]
   )
 
+  /** Open the shift selector popup for a cell */
   const handleCellClick = useCallback(
-    (memberId: string, date: number, currentShift: string) => {
-      setSelectedCell({ memberId, date, currentShift })
+    (memberId: string, date: number, currentShifts: DayShifts) => {
+      setSelectedCell({ memberId, date, currentShifts })
       setShiftSelectorOpen(true)
     },
-    []
+    [],
   )
 
+  /** Called when the shift selector modal confirms a selection */
   const handleShiftSelect = useCallback(
-    (shiftCode: string) => {
+    (dayShifts: DayShifts) => {
       if (!selectedCell || !draftSchedules) return
 
       const newSchedules = [...draftSchedules]
       const existingIdx = newSchedules.findIndex(
-        (s) => s.memberId === selectedCell.memberId
+        (s) => s.memberId === selectedCell.memberId,
       )
+      const isEmpty = !hasAnyShift(dayShifts)
 
       if (existingIdx === -1) {
-        if (shiftCode) {
+        if (!isEmpty) {
           newSchedules.push({
             memberId: selectedCell.memberId,
-            entries: [{ date: selectedCell.date, shiftCode }],
+            entries: [{ date: selectedCell.date, shifts: dayShifts }],
           })
         }
       } else {
         const schedule = { ...newSchedules[existingIdx] }
         const entryIdx = schedule.entries.findIndex(
-          (e) => e.date === selectedCell.date
+          (e) => e.date === selectedCell.date,
         )
 
-        if (shiftCode === '') {
+        if (isEmpty) {
           schedule.entries = schedule.entries.filter(
-            (e) => e.date !== selectedCell.date
+            (e) => e.date !== selectedCell.date,
           )
         } else if (entryIdx === -1) {
           schedule.entries = [
             ...schedule.entries,
-            { date: selectedCell.date, shiftCode },
+            { date: selectedCell.date, shifts: dayShifts },
           ]
         } else {
           schedule.entries = schedule.entries.map((e) =>
-            e.date === selectedCell.date ? { ...e, shiftCode } : e
+            e.date === selectedCell.date ? { ...e, shifts: dayShifts } : e,
           )
         }
         newSchedules[existingIdx] = schedule
@@ -189,7 +218,7 @@ export function useWardPage() {
       setDraftSchedules(newSchedules)
       setSelectedCell(null)
     },
-    [selectedCell, draftSchedules, setDraftSchedules]
+    [selectedCell, draftSchedules, setDraftSchedules],
   )
 
   const handleMonthChange = useCallback(
@@ -235,11 +264,12 @@ export function useWardPage() {
     router.replace('/home')
   }, [ward, user, deleteWard, router])
 
-  // --- Nurse: cell click opens create-swap modal ---
+  /** For nurses: clicking a cell on their own row opens swap modal */
   const handleNurseCellClick = useCallback(
-    async (memberId: string, date: number, currentShift: string) => {
+    async (memberId: string, date: number, currentShifts: DayShifts) => {
+      // Head nurse uses the shift selector popup
       if (isHeadNurse) {
-        handleCellClick(memberId, date, currentShift)
+        handleCellClick(memberId, date, currentShifts)
         return
       }
 
@@ -249,6 +279,9 @@ export function useWardPage() {
         setTimeout(() => setSwapValidationMsg(null), 3000)
         return
       }
+
+      // Map current shifts to first active shift code for swap
+      const shiftCode = currentShifts.M ? 'ช' : currentShifts.A ? 'บ' : currentShifts.N ? 'ด' : ''
 
       // Check if this cell is involved in a pending swap request
       if (ward) {
@@ -263,7 +296,7 @@ export function useWardPage() {
       }
 
       // Store clicked cell info for auto-mapping
-      setSwapCellInfo({ date, shift: currentShift })
+      setSwapCellInfo({ date, shift: shiftCode })
       setCreateSwapOpen(true)
     },
     [isHeadNurse, handleCellClick, currentMember, ward],
@@ -323,6 +356,11 @@ export function useWardPage() {
 
     // Unsaved changes
     hasUnsavedChanges,
+
+    // Validation
+    validationWarnings,
+    validationPanelOpen,
+    setValidationPanelOpen,
 
     // Code visibility
     showCode,

@@ -1,5 +1,7 @@
 'use client'
 
+'use client'
+
 import { Header } from '@/components/header'
 import { WardHeader } from '@/components/ward/ward-header'
 import { HeadNurseToolbar } from '@/components/ward/head-nurse-toolbar'
@@ -9,6 +11,8 @@ import { WardNurseCounts } from '@/components/ward/ward-nurse-counts'
 import { WardShiftConfigs } from '@/components/ward/ward-shift-configs'
 import { ScheduleGrid } from '@/components/ward/schedule-grid'
 import { ShiftSummary } from '@/components/ward/shift-summary'
+import { ValidationButton } from '@/components/ward/validation-button'
+import { ValidationPanel } from '@/components/ward/validation-panel'
 import { ShiftSelectorModal } from '@/components/modals/shift-selector-modal'
 import { DeleteWardModal } from '@/components/modals/delete-ward-modal'
 import { UnsavedChangesModal } from '@/components/modals/unsaved-changes-modal'
@@ -39,6 +43,9 @@ export default function WardPage() {
     isHeadNurse,
     isCreator,
     hasUnsavedChanges,
+    validationWarnings,
+    validationPanelOpen,
+    setValidationPanelOpen,
     showCode,
     setShowCode,
     copied,
@@ -192,7 +199,7 @@ export default function WardPage() {
         open={shiftSelectorOpen}
         onOpenChange={setShiftSelectorOpen}
         onSelect={handleShiftSelect}
-        currentShift={selectedCell?.currentShift || ''}
+        currentShifts={selectedCell?.currentShifts ?? { M: false, A: false, N: false, E: false, L: false, O: false }}
         shifts={displayWard.shifts}
       />
 
@@ -304,6 +311,21 @@ export default function WardPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Validation: yellow button (top-right) + side panel */}
+      {isHeadNurse && (
+        <>
+          <ValidationButton
+            warnings={validationWarnings}
+            onClick={() => setValidationPanelOpen(true)}
+          />
+          <ValidationPanel
+            open={validationPanelOpen}
+            onOpenChange={setValidationPanelOpen}
+            warnings={validationWarnings ?? []}
+          />
+        </>
+      )}
+
       {/* Pending swap popup */}
       <AlertDialog open={!!pendingSwapPopup} onOpenChange={(open) => !open && setPendingSwapPopup(null)}>
         <AlertDialogContent className="sm:max-w-md">
@@ -332,5 +354,6 @@ export default function WardPage() {
     </div>
   )
 }
+
 
 
