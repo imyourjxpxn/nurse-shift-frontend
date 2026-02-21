@@ -9,9 +9,8 @@ import { useAuth } from '@/lib/auth-context'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { isAuthenticated, loginWithGoogle, loginAsMockUser, isLoading } = useAuth()
+  const { isAuthenticated, loginWithGoogle, isLoading } = useAuth()
   const [isSigningIn, setIsSigningIn] = useState(false)
-  const [mockSigningIn, setMockSigningIn] = useState<string | null>(null)
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -59,46 +58,9 @@ export default function LoginPage() {
         >
           <GoogleIcon className="size-5" />
           <span className="font-medium">
-            {isSigningIn ? 'Signing in...' : 'Continue with Google'}
+            Continue with Google
           </span>
         </Button>
-
-        <div className="flex w-full max-w-sm flex-col items-center gap-3">
-          <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            <span>Select Mock User (Development Only)</span>
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <div className="flex w-full flex-col gap-2">
-            {[
-              { id: 'mock-head-nurse', label: 'A', name: 'พว.สมหญิง จริงใจ', role: 'Head Nurse' },
-              { id: 'nurse-2', label: 'B', name: 'พว.ปรียา วงศ์กุล', role: 'Nurse' },
-              { id: 'nurse-3', label: 'C', name: 'พว.นภา ศรีสุข', role: 'Nurse' },
-            ].map((u) => (
-              <button
-                key={u.id}
-                className="flex w-full items-center gap-3 rounded-lg border border-dashed border-amber-300 bg-background px-4 py-3 text-left transition-colors hover:bg-amber-50 disabled:opacity-50"
-                onClick={async () => {
-                  setMockSigningIn(u.id)
-                  await loginAsMockUser(u.id)
-                  router.push('/home')
-                }}
-                disabled={isLoading || isSigningIn || mockSigningIn !== null}
-              >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700">
-                  {u.label}
-                </span>
-                <span className="flex flex-col">
-                  <span className="text-sm font-medium text-foreground">
-                    {mockSigningIn === u.id ? 'Signing in...' : u.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{u.role}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
 
 
       </div>

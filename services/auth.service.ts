@@ -1,6 +1,10 @@
-import { mockGoogleProfile, mockUsers } from '@/mocks/users'
+'use client'
 
-interface User {
+/* ============================= */
+/* Types */
+/* ============================= */
+
+export interface User {
   id: string
   email: string
   displayName: string
@@ -10,90 +14,130 @@ interface User {
   isRegistered: boolean
 }
 
-const USER_STORAGE_KEY = 'waneyen_user'
+const USER_STORAGE_KEY = 'user'
 
-// TODO: Replace mock implementations with real API calls
-// e.g., POST /api/auth/google, POST /api/auth/register, POST /api/auth/logout
+/* ============================= */
+/* Wait for Google SDK */
+/* ============================= */
 
-/** Simulate Google OAuth and return Google profile data */
-export async function loginWithGoogle(): Promise<{
-  isNewUser: boolean
-  email: string
-  name: string
-  existingUser?: User
-}> {
-  await new Promise((r) => setTimeout(r, 1000))
-
-  const storedUser = localStorage.getItem(USER_STORAGE_KEY)
-  if (storedUser) {
-    try {
-      const parsed = JSON.parse(storedUser) as User
-      if (parsed.isRegistered) {
-        return { isNewUser: false, email: parsed.email, name: parsed.displayName, existingUser: parsed }
+function waitForGoogle(): Promise<void> {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
+        resolve()
+      } else {
+        setTimeout(check, 100)
       }
-    } catch {
-      // corrupted storage – treat as new
     }
-  }
-
-  return { isNewUser: true, email: mockGoogleProfile.email, name: mockGoogleProfile.name }
+    check()
+  })
 }
 
-/** Return a mock user by userId (dev-only shortcut) */
-export async function loginAsMockUser(userId: string): Promise<User> {
-  await new Promise((r) => setTimeout(r, 50))
-  const found = mockUsers.find((u) => u.id === userId)
-  if (!found) throw new Error(`Mock user not found: ${userId}`)
-  return {
-    id: found.id,
-    email: found.email,
-    displayName: found.displayName,
-    hospitalId: found.hospitalId,
-    hospitalName: found.hospitalName,
-    isRegistered: found.isRegistered,
-  }
+/* ============================= */
+/* Google Login */
+/* ============================= */
+
+export function loginWithGoogle() {
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!
+  const redirectUri = "http://localhost:4000/api/auth/google" 
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: "openid email profile",
+    access_type: "offline",
+    prompt: "select_account",
+  })
+
+  window.location.href =
+    `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }
 
-/** Return the list of all available mock users (for dev login UI) */
-export function getMockUsers() {
-  return mockUsers
-}
+/* ============================= */
+/* Complete Registration */
+/* ============================= */
 
-/** Complete first-time registration */
 export async function completeRegistration(
   email: string,
   displayName: string,
   hospitalId: string,
   hospitalName: string,
 ): Promise<User> {
-  await new Promise((r) => setTimeout(r, 300))
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        email,
+        displayName,
+        hospitalId,
+        hospitalName,
+      }),
+    },
+  )
 
-  const newUser: User = {
-    id: crypto.randomUUID(),
-    email,
-    displayName,
-    hospitalId,
-    hospitalName,
-    isRegistered: true,
+  if (!res.ok) {
+    throw new Error('Registration failed')
   }
 
-  return newUser
+  const data = await res.json()
+  return data.user
 }
 
-/** Update user display name */
-export async function updateDisplayName(user: User, newName: string): Promise<User> {
-  await new Promise((r) => setTimeout(r, 100))
-  return { ...user, displayName: newName }
+/* ============================= */
+/* Update Display Name */
+/* ============================= */
+
+export async function updateDisplayName(
+  user: User,
+  newName: string,
+): Promise<User> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ displayName: newName }),
+    },
+  )
+
+  if (!res.ok) {
+    throw new Error('Failed to update display name')
+  }
+
+  const data = await res.json()
+  return data.user
 }
 
-/** Persist the authenticated user to local storage (client-side session) */
+/* ============================= */
+/* Logout */
+/* ============================= */
+
+export async function logout(): Promise<void> {
+  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+
+  clearPersistedUser()
+}
+
+/* ============================= */
+/* Local Storage */
+/* ============================= */
+
 export function persistUser(user: User): void {
+  if (typeof window === 'undefined') return
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
 }
 
-/** Read persisted user from local storage */
 export function getPersistedUser(): User | null {
   if (typeof window === 'undefined') return null
+
   try {
     const stored = localStorage.getItem(USER_STORAGE_KEY)
     return stored ? (JSON.parse(stored) as User) : null
@@ -102,7 +146,7 @@ export function getPersistedUser(): User | null {
   }
 }
 
-/** Clear the persisted session */
 export function clearPersistedUser(): void {
+  if (typeof window === 'undefined') return
   localStorage.removeItem(USER_STORAGE_KEY)
 }

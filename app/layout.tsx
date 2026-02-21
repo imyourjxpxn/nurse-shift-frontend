@@ -1,4 +1,6 @@
-import { Bai_Jamjuree  } from "next/font/google"
+import Script from "next/script"
+
+import { Bai_Jamjuree } from "next/font/google"
 import { AuthProvider } from "@/lib/auth-context"
 import { WardProvider } from "@/lib/ward-context"
 import "./globals.css"
@@ -22,6 +24,11 @@ export default function RootLayout({
             {children}
           </WardProvider>
         </AuthProvider>
+        {/* ✅ Google Identity Services */}
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )

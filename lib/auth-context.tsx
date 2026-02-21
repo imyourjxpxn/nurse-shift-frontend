@@ -3,23 +3,14 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import {
   loginWithGoogle as serviceLoginWithGoogle,
-  loginAsMockUser as serviceLoginAsMockUser,
   completeRegistration as serviceCompleteRegistration,
   updateDisplayName as serviceUpdateDisplayName,
+  logout as serviceLogout,
   persistUser,
   getPersistedUser,
   clearPersistedUser,
+  type User,
 } from '@/services/auth.service'
-
-interface User {
-  id: string
-  email: string
-  displayName: string
-  hospitalId: string
-  hospitalName: string
-  avatarUrl?: string
-  isRegistered: boolean
-}
 
 interface AuthState {
   user: User | null
@@ -29,10 +20,13 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   loginWithGoogle: () => Promise<{ isNewUser: boolean }>
-  loginAsMockUser: (userId: string) => void
-  completeRegistration: (displayName: string, hospitalId: string, hospitalName: string) => void
+  completeRegistration: (
+    displayName: string,
+    hospitalId: string,
+    hospitalName: string,
+  ) => Promise<void>
   updateDisplayName: (newName: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   googleEmail: string | null
   googleName: string | null
 }
@@ -45,32 +39,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [googleEmail, setGoogleEmail] = useState<string | null>(null)
   const [googleName, setGoogleName] = useState<string | null>(null)
 
+  /* ============================= */
+  /* Google Login */
+  /* ============================= */
+
   const loginWithGoogle = useCallback(async () => {
     setIsLoading(true)
-    const result = await serviceLoginWithGoogle()
 
-    if (!result.isNewUser && result.existingUser) {
-      setUser(result.existingUser)
+    try {
+      const result = await serviceLoginWithGoogle()
+
+      if (!result.isNewUser && result.existingUser) {
+        setUser(result.existingUser)
+        persistUser(result.existingUser)
+        return { isNewUser: false }
+      }
+
+      setGoogleEmail(result.email || null)
+      setGoogleName(result.name || null)
+
+      return { isNewUser: true }
+    } finally {
       setIsLoading(false)
-      return { isNewUser: false }
     }
-
-    setGoogleEmail(result.email)
-    setGoogleName(result.name)
-    setIsLoading(false)
-    return { isNewUser: true }
   }, [])
 
-  const loginAsMockUser = useCallback(async (userId: string) => {
-    const mockUser = await serviceLoginAsMockUser(userId)
-    setUser(mockUser)
-    persistUser(mockUser)
-  }, [])
+  /* ============================= */
+  /* Complete Registration */
+  /* ============================= */
 
   const completeRegistration = useCallback(
     async (displayName: string, hospitalId: string, hospitalName: string) => {
-      const email = googleEmail || ''
-      const newUser = await serviceCompleteRegistration(email, displayName, hospitalId, hospitalName)
+      if (!googleEmail) throw new Error('Missing Google email')
+
+      const newUser = await serviceCompleteRegistration(
+        googleEmail,
+        displayName,
+        hospitalId,
+        hospitalName,
+      )
+
       setUser(newUser)
       persistUser(newUser)
       setGoogleEmail(null)
@@ -79,14 +87,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [googleEmail],
   )
 
-  const updateDisplayName = useCallback(async (newName: string) => {
-    if (!user) return
-    const updated = await serviceUpdateDisplayName(user, newName)
-    setUser(updated)
-    persistUser(updated)
-  }, [user])
+  /* ============================= */
+  /* Update Name */
+  /* ============================= */
 
-  const logout = useCallback(() => {
+  const updateDisplayName = useCallback(
+    async (newName: string) => {
+      if (!user) return
+
+      const updated = await serviceUpdateDisplayName(user, newName)
+      setUser(updated)
+      persistUser(updated)
+    },
+    [user],
+  )
+
+  /* ============================= */
+  /* Logout */
+  /* ============================= */
+
+  const logout = useCallback(async () => {
+    await serviceLogout()
     setUser(null)
     clearPersistedUser()
     setGoogleEmail(null)
@@ -100,7 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user?.isRegistered,
         loginWithGoogle,
-        loginAsMockUser,
         completeRegistration,
         updateDisplayName,
         logout,
@@ -115,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
