@@ -44,50 +44,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-  const init = async () => {
+    const init = async () => {
+      try {
+        // 1️⃣ เช็คว่าเพิ่งกลับมาจาก Google หรือไม่
+        const params = new URLSearchParams(window.location.search)
+        const token = params.get("accessToken")
+        const profileCompleted = params.get("profileCompleted")
 
-    // 1️⃣ เช็ค query param จาก Google
-    const params = new URLSearchParams(window.location.search)
-    const token = params.get("accessToken")
-    const complete = params.get("profileComplete")
+        if (token) {
+          localStorage.setItem("accessToken", token)
 
-    if (token) {
-      localStorage.setItem("accessToken", token)
+          // ลบ query ออกจาก URL กัน rerun
+          window.history.replaceState({}, "", window.location.pathname)
 
-      // ล้าง query param ออกจาก URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-      console.log("token:", token)
-      console.log("profileComplete:", complete)
+          if (profileCompleted === "false") {
+            router.replace("/register")
+          } else {
+            router.replace("/home")
+          }
 
-        if (complete === "false") {
-          setIsLoading(false)
-          router.replace("/register")
           return
         }
 
-        if (complete === "true") {
-          setIsLoading(false)
-          router.replace("/home")
-          return
+        // 2️⃣ โหลด user จาก backend ปกติ
+        const currentUser = await getCurrentUser()
+
+        if (currentUser) {
+          setUser(currentUser)
+          persistUser(currentUser)
+        } else {
+          setUser(null)
+          clearPersistedUser()
         }
+      } catch (error) {
+        console.error("Auth init error:", error)
+        setUser(null)
+        clearPersistedUser()
+      } finally {
+        // 🔥 จะรันเสมอ ไม่ว่า success หรือ error
+        setIsLoading(false)
       }
-
-    // 2️⃣ โหลด user จาก backend
-    const currentUser = await getCurrentUser()
-
-    if (currentUser) {
-      setUser(currentUser)
-      persistUser(currentUser)
-    } else {
-      setUser(null)
-      clearPersistedUser()
     }
 
-    setIsLoading(false)
-  }
-
     init()
- }, [router])
+  }, [router])
 
   /* ============================= */
   /* Google Login */

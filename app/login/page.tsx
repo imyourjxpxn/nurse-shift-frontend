@@ -11,16 +11,17 @@ export default function LoginPage() {
   const router = useRouter()
   const { user, loginWithGoogle, isLoading } = useAuth()
 
+  console.log("isLoading:", isLoading)
+  console.log("user:", user)
+
+
   useEffect(() => {
-    if (isLoading) return
-  
-    if (!user) {
-      router.replace('/login')
-      return
-    }
+    if (user) {
+      if (isLoading) return
   
     if (user.isRegistered) {
-      router.replace('/dashboard')
+      router.replace('/home')
+    }
     }
   }, [user, isLoading, router])
 

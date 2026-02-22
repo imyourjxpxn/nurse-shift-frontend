@@ -59,21 +59,29 @@ export function loginWithGoogle() {
 
 
 export async function getCurrentUser(): Promise<User | null> {
-  const token = localStorage.getItem("accessToken")
-  if (!token) return null
+  try {
+    const token = localStorage.getItem("accessToken")
+    if (!token) return null
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
 
-  if (!res.ok) {
-  localStorage.removeItem("accessToken")
-  return null
+    if (!res.ok) {
+      localStorage.removeItem("accessToken")
+      return null
+    }
+
+    return res.json()
+  } catch (error) {
+    console.error("getCurrentUser error:", error)
+    return null
   }
-
-  return res.json()
 }
 
 /* ============================= */
