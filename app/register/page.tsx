@@ -25,13 +25,11 @@ import { getHospitals } from '@/services/hospital.service'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const { user, isAuthenticated, completeRegistration } = useAuth()
-
-  const email = searchParams.get('email')
+  const { user, isLoading, completeRegistration } = useAuth()
 
   const [hospitals, setHospitals] = useState<{ id: string; name: string }[]>([])
-  const [fullName, setFullName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [selectedHospital, setSelectedHospital] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
@@ -52,20 +50,26 @@ export default function RegisterPage() {
     }, [])
   
 
-  useEffect(() => {
-  if (isAuthenticated) {
-    router.replace('/home')
-    return
-  }
+      useEffect(() => {
+      if (isLoading) return
 
-  if (!email) {
-    router.replace('/login')
-  }
-  }, [isAuthenticated, email, router])
+      if (!user) {
+        router.replace('/login')
+        return
+      }
+
+      if (user.isRegistered) {
+        router.replace('/dashboard')
+      }
+    }, [user, isLoading, router])
   
 
-
-  const isFormValid = fullName.trim() !== '' && selectedHospital !== '' && acceptedTerms && acceptedPrivacy
+  const isFormValid =
+  firstName.trim() !== '' &&
+  lastName.trim() !== '' &&
+  selectedHospital !== '' &&
+  acceptedTerms &&
+  acceptedPrivacy
 
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
@@ -74,20 +78,17 @@ export default function RegisterPage() {
   const hospital = hospitals.find(h => h.id === selectedHospital)
   if (!hospital || !user?.email) return
 
-  await completeRegistration(
-    user.email,
-    fullName,
-    hospital.id,
-    hospital.name
-  )
+  await completeRegistration({
+  email: user.email,
+  firstName,
+  lastName,
+  hospitalId: hospital.id,
+  hospitalName: hospital.name,
+})
 
   router.replace('/home')
 }
 
-
-  if (!email && !isAuthenticated) {
-    return null
-  }
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-background px-4 py-8">
@@ -121,26 +122,43 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                value={email || ''}
+                value={user?.email || ''}
                 disabled
                 className="bg-muted/50"
               />
             </div>
 
-            {/* Full Name field */}
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-sm text-sky-600">
-                ชื่อ-นามสกุล <span className="text-destructive">*</span>
-              </Label>
+          {/* Full Name (Connected Fields) */}
+          <div className="space-y-2">
+            <Label className="text-sm text-sky-600">
+              ชื่อ - นามสกุล <span className="text-destructive">*</span>
+            </Label>
+
+            <div className="flex rounded-md border border-sky-300 focus-within:ring-2 focus-within:ring-sky-500/30 focus-within:border-sky-500 overflow-hidden">
+              
+              {/* First Name */}
               <Input
-                id="fullName"
                 type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="กรอกชื่อ-นามสกุลของคุณ"
-                className="border-sky-300 focus-visible:border-sky-500 focus-visible:ring-sky-500/30"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="ชื่อจริง"
+                className="rounded-none border-0 focus-visible:ring-0"
               />
+
+              {/* Divider */}
+              <div className="w-px bg-sky-300" />
+
+              {/* Last Name */}
+              <Input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="นามสกุล"
+                className="rounded-none border-0 focus-visible:ring-0"
+              />
+              
             </div>
+          </div>
 
             {/* Hospital Select */}
             <div className="space-y-2">

@@ -9,18 +9,22 @@ import { useAuth } from '@/lib/auth-context'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { isAuthenticated, loginWithGoogle, isLoading } = useAuth()
-  const [isSigningIn, setIsSigningIn] = useState(false)
+  const { user, loginWithGoogle, isLoading } = useAuth()
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.replace('/home')
+    if (isLoading) return
+  
+    if (!user) {
+      router.replace('/login')
+      return
     }
-  }, [isAuthenticated, router])
+  
+    if (user.isRegistered) {
+      router.replace('/dashboard')
+    }
+  }, [user, isLoading, router])
 
-  const handleGoogleLogin = () => {
-  loginWithGoogle() // redirect ทันที
-}
+
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
@@ -39,8 +43,8 @@ export default function LoginPage() {
         <Button
           variant="outline"
           className="h-12 w-full max-w-sm gap-3 rounded-full border-border bg-background text-foreground shadow-sm hover:bg-muted"
-          onClick={handleGoogleLogin}
-          disabled={isLoading || isSigningIn}
+          onClick={loginWithGoogle}
+          disabled={isLoading}
         >
           <GoogleIcon className="size-5" />
           <span className="font-medium">

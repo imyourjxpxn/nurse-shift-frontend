@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from "react"
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import {
@@ -9,8 +10,11 @@ import {
   persistUser,
   getPersistedUser,
   clearPersistedUser,
+  getCurrentUser,
+  type CompleteRegistrationPayload,
   type User,
 } from '@/services/auth.service'
+
 
 interface AuthState {
   user: User | null
@@ -22,11 +26,9 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   loginWithGoogle: () => void
   completeRegistration: (
-    email: string,
-    displayName: string,
-    hospitalId: string,
-    hospitalName: string
-  ) => Promise<void>
+   payload: CompleteRegistrationPayload
+  ) => Promise<User>
+
   updateDisplayName: (newName: string) => Promise<void>
   logout: () => Promise<void>
   
@@ -36,7 +38,45 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => getPersistedUser())
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+  const init = async () => {
+
+    // 1️⃣ เช็ค query param จาก Google
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get("accessToken")
+    const complete = params.get("profileComplete")
+
+    if (token) {
+      localStorage.setItem("accessToken", token)
+
+      // ล้าง query param ออกจาก URL
+      window.history.replaceState({}, document.title, window.location.pathname)
+
+      if (complete === "false") {
+        setIsLoading(false)
+        window.location.href = "/register"
+        return
+      }
+    }
+
+    // 2️⃣ โหลด user จาก backend
+    const currentUser = await getCurrentUser()
+
+    if (currentUser) {
+      setUser(currentUser)
+      persistUser(currentUser)
+    } else {
+      setUser(null)
+      clearPersistedUser()
+    }
+
+    setIsLoading(false)
+  }
+
+    init()
+ }, [])
 
   /* ============================= */
   /* Google Login */
@@ -45,31 +85,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = useCallback(async () => {
     setIsLoading(true)
     serviceLoginWithGoogle() // redirect ไป Google เลย
+    
   }, [])
+
+
 
   /* ============================= */
   /* Complete Registration */
   /* ============================= */
 
   const completeRegistration = useCallback(
-   async (
-    email: string,
-    displayName: string,
-    hospitalId: string,
-    hospitalName: string
-  ) => {
-    const newUser = await serviceCompleteRegistration(
-      email,
-      displayName,
-      hospitalId,
-      hospitalName,
-    )
+    async (payload: CompleteRegistrationPayload) => {
+    try {
+      const newUser = await serviceCompleteRegistration(payload)
 
       setUser(newUser)
       persistUser(newUser)
-    },
-    [],
-  )
+      
+      return newUser
+      
+    } catch (error) {
+      console.error('Complete registration failed:', error)
+      throw error
+    }
+  },
+  [serviceCompleteRegistration, persistUser],
+)
 
   /* ============================= */
   /* Update Name */
@@ -101,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isLoading,
-        isAuthenticated: !!user?.isRegistered,
+        isAuthenticated: !!user,
         loginWithGoogle,
         completeRegistration,
         updateDisplayName,

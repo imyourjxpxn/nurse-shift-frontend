@@ -1,4 +1,3 @@
-'use client'
 
 /* ============================= */
 /* Types */
@@ -20,17 +19,21 @@ const USER_STORAGE_KEY = 'user'
 /* Wait for Google SDK */
 /* ============================= */
 
-function waitForGoogle(): Promise<void> {
-  return new Promise((resolve) => {
-    const check = () => {
-      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-        resolve()
-      } else {
-        setTimeout(check, 100)
-      }
-    }
-    check()
-  })
+export async function extractGoogleAuth() {
+  const params = new URLSearchParams(window.location.search)
+
+  const token = params.get("accessToken")
+  const complete = params.get("profileComplete")
+
+  if (!token) {
+  return null
+}
+
+  localStorage.setItem("accessToken", token)
+
+  return {
+    profileComplete: complete === "true"
+  }
 }
 
 /* ============================= */
@@ -39,7 +42,7 @@ function waitForGoogle(): Promise<void> {
 
 export function loginWithGoogle() {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!
-  const redirectUri = "http://localhost:4000/api/auth/google" 
+  const redirectUri = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google` 
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -54,28 +57,52 @@ export function loginWithGoogle() {
     `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }
 
+
+export async function getCurrentUser(): Promise<User | null> {
+  const token = localStorage.getItem("accessToken")
+  if (!token) return null
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) {
+  localStorage.removeItem("accessToken")
+  return null
+  }
+
+  return res.json()
+}
+
 /* ============================= */
 /* Complete Registration */
 /* ============================= */
 
+export interface CompleteRegistrationPayload {
+  email: string
+  firstName: string
+  lastName: string
+  hospitalId: string
+  hospitalName: string
+}
+
 export async function completeRegistration(
-  email: string,
-  displayName: string,
-  hospitalId: string,
-  hospitalName: string,
+  payload: CompleteRegistrationPayload
 ): Promise<User> {
+
+  const token = localStorage.getItem("accessToken")
+
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/user/updateForCompleteProfile`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        email,
-        displayName,
-        hospitalId,
-        hospitalName,
-      }),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
     },
   )
 
