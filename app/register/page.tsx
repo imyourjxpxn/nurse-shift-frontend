@@ -2,8 +2,9 @@
 
 import React from "react"
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,10 @@ import { getHospitals } from '@/services/hospital.service'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const { isAuthenticated, googleEmail, googleName, completeRegistration } = useAuth()
+  const searchParams = useSearchParams()
+  const { user, isAuthenticated, completeRegistration } = useAuth()
+
+  const email = searchParams.get('email')
 
   const [hospitals, setHospitals] = useState<{ id: string; name: string }[]>([])
   const [fullName, setFullName] = useState('')
@@ -34,43 +38,54 @@ export default function RegisterPage() {
   const [termsModalOpen, setTermsModalOpen] = useState(false)
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false)
 
-  useEffect(() => {
-    getHospitals().then(setHospitals)
-  }, [])
+    useEffect(() => {
+    const fetchHospitals = async () => {
+      try {
+        const data = await getHospitals()
+        setHospitals(data)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    fetchHospitals()
+    }, [])
+  
 
   useEffect(() => {
-    if (googleName) {
-      setFullName(googleName)
-    }
-  }, [googleName])
+  if (isAuthenticated) {
+    router.replace('/home')
+    return
+  }
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace('/home')
-    }
-  }, [isAuthenticated, router])
+  if (!email) {
+    router.replace('/login')
+  }
+  }, [isAuthenticated, email, router])
+  
 
-  useEffect(() => {
-    // If no google email, user hasn't started OAuth flow
-    if (!googleEmail && !isAuthenticated) {
-      router.replace('/login')
-    }
-  }, [googleEmail, isAuthenticated, router])
 
   const isFormValid = fullName.trim() !== '' && selectedHospital !== '' && acceptedTerms && acceptedPrivacy
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!isFormValid) return
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  if (!isFormValid) return
 
-    const hospital = hospitals.find(h => h.id === selectedHospital)
-    if (hospital) {
-      completeRegistration(fullName, selectedHospital, hospital.name)
-      router.push('/home')
-    }
-  }
+  const hospital = hospitals.find(h => h.id === selectedHospital)
+  if (!hospital || !user?.email) return
 
-  if (!googleEmail && !isAuthenticated) {
+  await completeRegistration(
+    user.email,
+    fullName,
+    hospital.id,
+    hospital.name
+  )
+
+  router.replace('/home')
+}
+
+
+  if (!email && !isAuthenticated) {
     return null
   }
 
@@ -106,7 +121,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                value={googleEmail || ''}
+                value={email || ''}
                 disabled
                 className="bg-muted/50"
               />

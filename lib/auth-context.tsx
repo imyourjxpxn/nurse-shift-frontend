@@ -18,17 +18,18 @@ interface AuthState {
   isAuthenticated: boolean
 }
 
+
 interface AuthContextType extends AuthState {
-  loginWithGoogle: () => Promise<{ isNewUser: boolean }>
+  loginWithGoogle: () => void
   completeRegistration: (
+    email: string,
     displayName: string,
     hospitalId: string,
-    hospitalName: string,
+    hospitalName: string
   ) => Promise<void>
   updateDisplayName: (newName: string) => Promise<void>
   logout: () => Promise<void>
-  googleEmail: string | null
-  googleName: string | null
+  
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -36,8 +37,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => getPersistedUser())
   const [isLoading, setIsLoading] = useState(false)
-  const [googleEmail, setGoogleEmail] = useState<string | null>(null)
-  const [googleName, setGoogleName] = useState<string | null>(null)
 
   /* ============================= */
   /* Google Login */
@@ -45,23 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = useCallback(async () => {
     setIsLoading(true)
-
-    try {
-      const result = await serviceLoginWithGoogle()
-
-      if (!result.isNewUser && result.existingUser) {
-        setUser(result.existingUser)
-        persistUser(result.existingUser)
-        return { isNewUser: false }
-      }
-
-      setGoogleEmail(result.email || null)
-      setGoogleName(result.name || null)
-
-      return { isNewUser: true }
-    } finally {
-      setIsLoading(false)
-    }
+    serviceLoginWithGoogle() // redirect ไป Google เลย
   }, [])
 
   /* ============================= */
@@ -69,22 +52,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* ============================= */
 
   const completeRegistration = useCallback(
-    async (displayName: string, hospitalId: string, hospitalName: string) => {
-      if (!googleEmail) throw new Error('Missing Google email')
-
-      const newUser = await serviceCompleteRegistration(
-        googleEmail,
-        displayName,
-        hospitalId,
-        hospitalName,
-      )
+   async (
+    email: string,
+    displayName: string,
+    hospitalId: string,
+    hospitalName: string
+  ) => {
+    const newUser = await serviceCompleteRegistration(
+      email,
+      displayName,
+      hospitalId,
+      hospitalName,
+    )
 
       setUser(newUser)
       persistUser(newUser)
-      setGoogleEmail(null)
-      setGoogleName(null)
     },
-    [googleEmail],
+    [],
   )
 
   /* ============================= */
@@ -110,8 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await serviceLogout()
     setUser(null)
     clearPersistedUser()
-    setGoogleEmail(null)
-    setGoogleName(null)
   }, [])
 
   return (
@@ -124,8 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         completeRegistration,
         updateDisplayName,
         logout,
-        googleEmail,
-        googleName,
       }}
     >
       {children}

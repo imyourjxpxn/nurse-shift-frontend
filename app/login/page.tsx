@@ -18,23 +18,9 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router])
 
-  const handleGoogleLogin = async () => {
-    setIsSigningIn(true)
-    try {
-      const result = await loginWithGoogle()
-      if (result.isNewUser) {
-        router.push('/register')
-      } else {
-        router.push('/home')
-      }
-    } finally {
-      setIsSigningIn(false)
-    }
-  }
-
-  if (isAuthenticated) {
-    return null
-  }
+  const handleGoogleLogin = () => {
+  loginWithGoogle() // redirect ทันที
+}
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
