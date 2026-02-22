@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { ArrowLeft } from 'lucide-react'
@@ -21,34 +21,21 @@ import { WaneYenLogo } from '@/components/waneyen-logo'
 import { LegalContentModal } from '@/components/modals/legal-content-modal'
 import { TermsOfServiceContent, PrivacyPolicyContent } from '@/components/legal-content'
 import { useAuth } from '@/lib/auth-context'
-import { getHospitals } from '@/services/hospital.service'
+import  { getHospitals, type Hospital } from '@/services/hospital.service'
 
 export default function RegisterPage() {
   const router = useRouter()
   const { user, isLoading, completeRegistration } = useAuth()
 
-  const [hospitals, setHospitals] = useState<{ id: string; name: string }[]>([])
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [selectedHospital, setSelectedHospital] = useState('')
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
+  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [termsModalOpen, setTermsModalOpen] = useState(false)
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false)
 
-    useEffect(() => {
-    const fetchHospitals = async () => {
-      try {
-        const data = await getHospitals()
-        setHospitals(data)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-
-    fetchHospitals()
-    }, [])
-  
 
       useEffect(() => {
       if (isLoading) return
@@ -64,10 +51,32 @@ export default function RegisterPage() {
     }, [user, isLoading, router])
   
 
+   useEffect(() => {
+        let isMounted = true
+
+        const loadHospitals = async () => {
+          try {
+            const data = await getHospitals()
+            if (isMounted) {
+              setHospitals(data)
+            }
+          } catch (err) {
+            console.error('Failed to load hospitals:', err)
+          }
+        }
+
+        loadHospitals()
+
+        return () => {
+          isMounted = false
+        }
+   }, [])
+  
+  
   const isFormValid =
   firstName.trim() !== '' &&
   lastName.trim() !== '' &&
-  selectedHospital !== '' &&
+  selectedHospital !== null &&
   acceptedTerms &&
   acceptedPrivacy
 
@@ -75,15 +84,13 @@ export default function RegisterPage() {
   e.preventDefault()
   if (!isFormValid) return
 
-  const hospital = hospitals.find(h => h.id === selectedHospital)
-  if (!hospital || !user?.email) return
+  if (!selectedHospital || !user?.email) return
 
   await completeRegistration({
-  email: user.email,
-  firstName,
-  lastName,
-  hospitalId: hospital.id,
-  hospitalName: hospital.name,
+    email: user.email,
+    firstName,
+    lastName,
+    hospitalId: selectedHospital.hospitalId,
 })
 
   router.replace('/home')
@@ -165,13 +172,16 @@ export default function RegisterPage() {
               <Label htmlFor="hospital" className="text-sm text-sky-600">
                 โรงพยาบาล <span className="text-destructive">*</span>
               </Label>
-              <Select value={selectedHospital} onValueChange={setSelectedHospital}>
+              <Select
+                value={selectedHospital?.hospitalId ?? ""}
+                onValueChange={(value) => setSelectedHospital(hospitals.find(h => h.hospitalId === value) || null)}
+              >
                 <SelectTrigger className="w-full border-border">
                   <SelectValue placeholder="เลือกโรงพยาบาล" />
                 </SelectTrigger>
                 <SelectContent>
                   {hospitals.map((hospital) => (
-                    <SelectItem key={hospital.id} value={hospital.id}>
+                    <SelectItem key={hospital.hospitalId} value={hospital.hospitalId}>
                       {hospital.name}
                     </SelectItem>
                   ))}

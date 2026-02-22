@@ -85,7 +85,6 @@ export interface CompleteRegistrationPayload {
   firstName: string
   lastName: string
   hospitalId: string
-  hospitalName: string
 }
 
 export async function completeRegistration(

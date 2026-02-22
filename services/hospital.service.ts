@@ -1,16 +1,23 @@
-import { mockHospitals } from '@/mocks/hospitals'
-import type { Hospital } from '@/mocks/hospitals'
+// services/hospital.service.ts
 
-// Re-export the Hospital type so consumers can import from one place
-export type { Hospital }
-
-// TODO: Replace mock implementations with real API calls (fetch/axios)
-// e.g., const res = await fetch('/api/hospitals'); return res.json();
-
-export async function getHospitals(): Promise<Hospital[]> {
-  return [...mockHospitals]
+export interface Hospital {
+  hospitalId: string
+  name: string
 }
 
-export async function getHospitalById(id: string): Promise<Hospital | undefined> {
-  return mockHospitals.find((h) => h.id === id)
+export async function getHospitals(): Promise<Hospital[]> {
+  const token = localStorage.getItem('accessToken')
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hospital/getAllHospital`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch hospitals')
+  }
+
+  return res.json()
 }
