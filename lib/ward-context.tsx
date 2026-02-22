@@ -38,7 +38,6 @@ interface WardContextType {
   createWard: (
     name: string,
     hospitalId: string,
-    hospitalName: string,
     userId: string,
     userName: string,
   ) => Promise<Ward>
@@ -86,11 +85,11 @@ export function WardProvider({ children }: { children: ReactNode }) {
     async (
       name: string,
       hospitalId: string,
-      hospitalName: string,
+      //hospitalName: string,
       userId: string,
       userName: string,
     ): Promise<Ward> => {
-      const newWard = await serviceCreateWard(name, hospitalId, hospitalName, userId, userName)
+      const newWard = await serviceCreateWard(name, hospitalId, userId, userName)
       refreshWards()
       return newWard
     },

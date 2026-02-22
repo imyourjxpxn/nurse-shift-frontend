@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api-client"
 
 /* ============================= */
 /* Types */
@@ -8,9 +9,7 @@ export interface User {
   email: string
   displayName: string
   hospitalId: string
-  hospitalName: string
-  avatarUrl?: string
-  isRegistered: boolean
+  profileCompleted: boolean
 }
 
 const USER_STORAGE_KEY = 'user'
@@ -23,16 +22,16 @@ export async function extractGoogleAuth() {
   const params = new URLSearchParams(window.location.search)
 
   const token = params.get("accessToken")
-  const complete = params.get("profileComplete")
+  const complete = params.get("profileCompleted") // ✅ แก้ตรงนี้
 
   if (!token) {
-  return null
-}
+    return null
+  }
 
   localStorage.setItem("accessToken", token)
 
   return {
-    profileComplete: complete === "true"
+    profileCompleted: complete === "true",
   }
 }
 
@@ -60,24 +59,22 @@ export function loginWithGoogle() {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const token = localStorage.getItem("accessToken")
-    if (!token) return null
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    const res = await apiFetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`
     )
 
-    if (!res.ok) {
-      localStorage.removeItem("accessToken")
-      return null
+    if (!res.ok) return null
+
+    const data = await res.json()
+
+    return {
+      id: data.userId,
+      email: data.personalEmail,
+      displayName: `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim(),
+      hospitalId: data.hospitalId,
+      profileCompleted: data.profileCompleted,
     }
 
-    return res.json()
   } catch (error) {
     console.error("getCurrentUser error:", error)
     return null
@@ -89,9 +86,11 @@ export async function getCurrentUser(): Promise<User | null> {
 /* ============================= */
 
 export interface CompleteRegistrationPayload {
-  email: string
+  userId: string
   firstName: string
   lastName: string
+  //lineUserId: string | null
+  //mobilePhone: string
   hospitalId: string
 }
 
@@ -99,26 +98,25 @@ export async function completeRegistration(
   payload: CompleteRegistrationPayload
 ): Promise<User> {
 
-  const token = localStorage.getItem("accessToken")
-
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/user/updateForCompleteProfile`,
+  const res = await apiFetch(
+    '/api/user/updateForCompleteProfile',
     {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      method: 'PATCH',
       body: JSON.stringify(payload),
-    },
+    }
   )
 
-  if (!res.ok) {
-    throw new Error('Registration failed')
-  }
-
   const data = await res.json()
-  return data.user
+
+  return {
+    id: data.userId,
+    email: data.personalEmail ?? data.email ?? '',
+    displayName: [data.firstName, data.lastName]
+      .filter(Boolean)
+      .join(' '),
+    hospitalId: data.hospitalId,
+    profileCompleted: data.profileCompleted ?? true,
+  }
 }
 
 /* ============================= */
@@ -129,14 +127,13 @@ export async function updateDisplayName(
   user: User,
   newName: string,
 ): Promise<User> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`,
+
+  const res = await apiFetch(
+    `/users/${user.id}`,
     {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ displayName: newName }),
-    },
+    }
   )
 
   if (!res.ok) {
@@ -152,11 +149,17 @@ export async function updateDisplayName(
 /* ============================= */
 
 export async function logout(): Promise<void> {
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  })
+  try {
+    await apiFetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`,
+      { method: "POST" }
+    )
+  } catch (error) {
+    console.error("Logout API failed:", error)
+  }
 
+  // ลบฝั่ง client เสมอ
+  localStorage.removeItem("accessToken")
   clearPersistedUser()
 }
 

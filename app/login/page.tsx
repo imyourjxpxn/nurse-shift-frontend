@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { WaneYenLogo } from '@/components/waneyen-logo'
 import { GoogleIcon } from '@/components/icons/google-icon'
 import { useAuth } from '@/lib/auth-context'
+import { extractGoogleAuth } from '@/services/auth.service'
+
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,20 +16,18 @@ export default function LoginPage() {
   console.log("isLoading:", isLoading)
   console.log("user:", user)
 
-
+  // ✅ 1️⃣ เช็คกรณี redirect กลับมาจาก Google
   useEffect(() => {
-    if (isLoading) return
+  if (isLoading) return
+  if (!user) return
 
-    if (!user) return
+  if (user.profileCompleted) {
+    router.replace("/home")
+  } else {
+    router.replace("/register")
+  }
 
-    if (!user.isRegistered) {
-      router.replace("/register")
-    } else {
-      router.replace("/home")
-    }
-  }, [user, isLoading, router])
-
-
+}, [user, isLoading, router])
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4">

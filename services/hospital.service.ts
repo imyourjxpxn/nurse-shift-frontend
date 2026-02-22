@@ -1,4 +1,5 @@
 // services/hospital.service.ts
+import { apiFetch } from "@/lib/api-client"
 
 export interface Hospital {
   hospitalId: string
@@ -6,14 +7,10 @@ export interface Hospital {
 }
 
 export async function getHospitals(): Promise<Hospital[]> {
-  const token = localStorage.getItem('accessToken')
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hospital/getAllHospital`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  })
+  const res = await apiFetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/hospital/getAllHospital`
+  )
 
   if (!res.ok) {
     throw new Error('Failed to fetch hospitals')

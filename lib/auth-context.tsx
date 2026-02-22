@@ -1,8 +1,8 @@
 'use client'
-import { useEffect } from "react"
+
+import { useEffect, useCallback, useState, createContext, useContext, type ReactNode } from 'react'
 import { useRouter } from "next/navigation"
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import {
   loginWithGoogle as serviceLoginWithGoogle,
   completeRegistration as serviceCompleteRegistration,
@@ -16,6 +16,9 @@ import {
   type User,
 } from '@/services/auth.service'
 
+/* =========================================================
+   TYPES
+========================================================= */
 
 interface AuthState {
   user: User | null
@@ -23,157 +26,205 @@ interface AuthState {
   isAuthenticated: boolean
 }
 
-
 interface AuthContextType extends AuthState {
   loginWithGoogle: () => void
-  completeRegistration: (
-   payload: CompleteRegistrationPayload
-  ) => Promise<User>
-
+  completeRegistration: (payload: CompleteRegistrationPayload) => Promise<User>
   updateDisplayName: (newName: string) => Promise<void>
   logout: () => Promise<void>
-  
 }
 
+/* =========================================================
+   CONTEXT
+========================================================= */
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+/* =========================================================
+   PROVIDER
+========================================================= */
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
 
-  const [user, setUser] = useState<User | null>(() => getPersistedUser())
+  const [user, setUser] = useState<User | null>(() => {
+    console.log("🔵 [INIT] Load persisted user from localStorage")
+    return getPersistedUser()
+  })
+
   const [isLoading, setIsLoading] = useState(true)
+
+  /* =========================================================
+     INIT AUTH FLOW
+  ========================================================= */
 
   useEffect(() => {
     const init = async () => {
+      console.log("====================================")
+      console.log("🚀 [AUTH INIT] START")
+      console.log("====================================")
+
       try {
-        // 1️⃣ เช็คว่าเพิ่งกลับมาจาก Google หรือไม่
+        /* -----------------------------------------
+           STEP 1️⃣ : Check URL for accessToken
+        ----------------------------------------- */
+        console.log("🔎 STEP 1: Check URL params")
+
         const params = new URLSearchParams(window.location.search)
         const token = params.get("accessToken")
-        const profileCompleted = params.get("profileCompleted")
 
-        console.log('token===========')
-        console.log(token)
-        console.log('===========')
-        console.log('profileCompleted===========')
-        console.log(profileCompleted)
-        console.log('===========')
-
+        console.log("➡ accessToken:", token)
 
         if (token) {
+          console.log("✅ Token found in URL")
+
           localStorage.setItem("accessToken", token)
 
-          // 🔥 ดึง user จาก backend ทันทีหลังได้ token
+          console.log("📡 STEP 1.1: Fetch current user from backend")
+
           const currentUser = await getCurrentUser()
 
-          console.log('token===========')
-          console.log(token)
-          console.log('===========')
+          console.log("👤 currentUser:", currentUser)
 
           if (currentUser) {
+            console.log("✅ User fetched successfully")
             setUser(currentUser)
             persistUser(currentUser)
           } else {
+            console.log("❌ No user returned from backend")
             setUser(null)
             clearPersistedUser()
           }
 
-          // ลบ query ออกจาก URL กัน rerun
+          // remove query params
           window.history.replaceState({}, "", window.location.pathname)
-
-          // if (profileCompleted === "false") {
-          //   router.replace("/register")
-          // } else {
-          //   router.replace("/home")
-          // }
+          console.log("🧹 URL cleaned")
 
           return
         }
 
-        // 2️⃣ โหลด user จาก backend ปกติ
+        /* -----------------------------------------
+           STEP 2️⃣ : Normal page refresh flow
+        ----------------------------------------- */
+        console.log("🔎 STEP 2: No token in URL, normal auth check")
+
         const currentUser = await getCurrentUser()
 
-        console.log('currentUser===========')
-        console.log(currentUser)
-        console.log('===========')
+        console.log("👤 currentUser:", currentUser)
 
         if (currentUser) {
+          console.log("✅ User still logged in")
           setUser(currentUser)
           persistUser(currentUser)
         } else {
+          console.log("❌ Not authenticated")
           setUser(null)
           clearPersistedUser()
         }
+
       } catch (error) {
-        console.error("Auth init error:", error)
+        console.error("💥 [AUTH INIT ERROR]:", error)
         setUser(null)
         clearPersistedUser()
       } finally {
-        // 🔥 จะรันเสมอ ไม่ว่า success หรือ error
+        console.log("🏁 [AUTH INIT] END")
+        console.log("====================================")
         setIsLoading(false)
       }
     }
 
     init()
-  }, [router])
-
-  /* ============================= */
-  /* Google Login */
-  /* ============================= */
-
-  const loginWithGoogle = useCallback(async () => {
-    setIsLoading(true)
-    serviceLoginWithGoogle() // redirect ไป Google เลย
-    
   }, [])
 
+  /* =========================================================
+     GOOGLE LOGIN
+  ========================================================= */
 
+  const loginWithGoogle = useCallback(() => {
+    console.log("🟢 [AUTH] loginWithGoogle called")
+    setIsLoading(true)
 
-  /* ============================= */
-  /* Complete Registration */
-  /* ============================= */
+    // redirect immediately
+    serviceLoginWithGoogle()
+  }, [])
+
+  /* =========================================================
+     COMPLETE REGISTRATION
+  ========================================================= */
 
   const completeRegistration = useCallback(
     async (payload: CompleteRegistrationPayload) => {
-    try {
-      const newUser = await serviceCompleteRegistration(payload)
 
-      setUser(newUser)
-      persistUser(newUser)
-      
-      return newUser
-      
-    } catch (error) {
-      console.error('Complete registration failed:', error)
-      throw error
-    }
-  },
-  [serviceCompleteRegistration, persistUser],
-)
+      console.log("====================================")
+      console.log("🟢 [AUTH] COMPLETE REGISTRATION")
+      console.log("====================================")
+      console.log("📦 Payload:", payload)
 
-  /* ============================= */
-  /* Update Name */
-  /* ============================= */
+      try {
+        console.log("📡 Calling backend service...")
+        const newUser = await serviceCompleteRegistration(payload)
+
+        console.log("✅ Backend success:", newUser)
+
+        setUser(newUser)
+        persistUser(newUser)
+
+        console.log("💾 User updated in state + localStorage")
+
+        return newUser
+
+      } catch (error) {
+        console.error("💥 Complete registration failed:", error)
+        throw error
+      }
+    },
+    []
+  )
+
+  /* =========================================================
+     UPDATE DISPLAY NAME
+  ========================================================= */
 
   const updateDisplayName = useCallback(
     async (newName: string) => {
-      if (!user) return
+      console.log("====================================")
+      console.log("🟢 [AUTH] UPDATE DISPLAY NAME")
+      console.log("====================================")
 
-      const updated = await serviceUpdateDisplayName(user, newName)
-      setUser(updated)
-      persistUser(updated)
+      if (!user) {
+        console.log("❌ No user found, abort")
+        return
+      }
+
+      try {
+        console.log("📡 Sending update to backend...")
+        const updated = await serviceUpdateDisplayName(user, newName)
+
+        console.log("✅ Updated user:", updated)
+
+        setUser(updated)
+        persistUser(updated)
+
+      } catch (error) {
+        console.error("💥 Update name failed:", error)
+        throw error
+      }
     },
-    [user],
+    [user]
   )
 
-  /* ============================= */
-  /* Logout */
-  /* ============================= */
+  /* =========================================================
+     LOGOUT
+  ========================================================= */
 
   const logout = useCallback(async () => {
-    await serviceLogout()
-    setUser(null)
-    clearPersistedUser()
-  }, [])
+  await serviceLogout()
+  setUser(null)
+  router.replace("/login")
+}, [router])
+
+  /* =========================================================
+     PROVIDER RETURN
+  ========================================================= */
 
   return (
     <AuthContext.Provider
@@ -192,10 +243,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
+/* =========================================================
+   HOOK
+========================================================= */
+
 export function useAuth() {
   const context = useContext(AuthContext)
+
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
+
   return context
 }

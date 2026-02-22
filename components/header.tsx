@@ -10,10 +10,13 @@ export function Header() {
   const router = useRouter()
   const { user, logout } = useAuth()
 
-  const handleLogout = () => {
-    logout()
-    router.push('/login')
+ const handleLogout = async () => {
+  try {
+    await logout()
+  } catch (err) {
+    console.error("Logout failed:", err)
   }
+}
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background">

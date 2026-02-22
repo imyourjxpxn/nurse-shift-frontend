@@ -15,7 +15,6 @@ import type { Ward } from '@/lib/types'
 
 export default function HomePage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuth()
   const { createWard, joinWard, deleteWard, getWardsByHospital, getUserRole, ensureUserInMockWard } =
     useWard()
 
@@ -26,12 +25,13 @@ export default function HomePage() {
   const [createdWard, setCreatedWard] = useState<Ward | null>(null)
   const [selectedWard, setSelectedWard] = useState<Ward | null>(null)
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/login')
-    }
-  }, [isAuthenticated, router])
+  const { user, isAuthenticated, isLoading } = useAuth()
 
+  useEffect(() => {
+  if (!isLoading && !isAuthenticated) {
+    router.replace('/login')
+  }
+}, [isLoading, isAuthenticated, router])
   // Ensure current user is added to mock MED ward for demo purposes
   useEffect(() => {
     if (user) {
@@ -49,10 +49,9 @@ export default function HomePage() {
   const handleCreateWard = async (name: string) => {
     const ward = await createWard(
       name,
-      user.hospitalId,
-      user.hospitalName,
-      user.id,
-      user.displayName
+        user.hospitalId,
+        user.id,
+        user.displayName
     )
     setCreatedWard(ward)
     setCreateModalOpen(false)
@@ -98,7 +97,7 @@ export default function HomePage() {
       <Header />
       <main className="mx-auto max-w-7xl px-4 py-6">
         <HospitalCard
-          hospitalName={user.hospitalName}
+          hospitalName={"โรงพยาบาลสมมติ"}
           onCreateWard={() => setCreateModalOpen(true)}
         />
 

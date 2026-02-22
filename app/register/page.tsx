@@ -35,21 +35,26 @@ export default function RegisterPage() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [termsModalOpen, setTermsModalOpen] = useState(false)
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
 
-      useEffect(() => {
-      if (isLoading) return
+    useEffect(() => {
+    if (isLoading) return
 
-      if (!user) {
-        router.replace('/login')
-        return
+    // ถ้าไม่มี user → เด้งกลับ login
+    if (!user) {
+      router.replace('/login')
+      return
       }
+      
+       if (user.profileCompleted) {
+    router.replace('/home')
+  }
 
-      if (user.isRegistered) {
-        router.replace('/dashboard')
-      }
-    }, [user, isLoading, router])
-  
+
+    // ถ้ามี user แล้ว แปลว่า profileCompleted = false
+  }, [user, isLoading, router])
+    
 
    useEffect(() => {
         let isMounted = true
@@ -83,19 +88,44 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
 
-  if (!isFormValid || !selectedHospital || !user?.email) return
+  console.log("🟢 SUBMIT BUTTON CLICKED")
+
+  if (!isFormValid) {
+    console.log("❌ Form not valid")
+    return
+  }
+
+  if (!selectedHospital) {
+    console.log("❌ No hospital selected")
+    return
+  }
+
+  if (!user) {
+    console.log("❌ No user data")
+    return
+  }
 
   try {
-    await completeRegistration({
-      email: user.email,
+    setIsSubmitting(true)
+    console.log("🚀 Sending API request...")
+
+    const response = await completeRegistration({
+      userId: user.id,              // ✅ สำคัญมาก
       firstName,
       lastName,
+      lineUserId: null,             // ✅ ถ้ายังไม่มี
+      mobilePhone: "",              // ✅ หรือเพิ่ม input ให้กรอก
       hospitalId: selectedHospital.hospitalId,
     })
 
-    router.replace('/home')
+    console.log("✅ API SUCCESS:", response)
+
+    router.replace("/home")
   } catch (error) {
-    console.error('Registration failed:', error)
+    console.error("💥 API ERROR:", error)
+  } finally {
+    setIsSubmitting(false)
+    console.log("🔄 isSubmitting reset")
   }
 }
 
@@ -281,7 +311,7 @@ export default function RegisterPage() {
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
               className="h-12 w-full bg-sky-400 text-white hover:bg-sky-500 disabled:bg-sky-300 disabled:opacity-70"
             >
               ยืนยันการลงทะเบียน

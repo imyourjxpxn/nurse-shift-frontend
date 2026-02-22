@@ -103,7 +103,6 @@ export async function getWardById(wardId: string): Promise<Ward | undefined> {
 export async function createWard(
   name: string,
   hospitalId: string,
-  hospitalName: string,
   userId: string,
   userName: string,
 ): Promise<Ward> {
@@ -114,7 +113,7 @@ export async function createWard(
     id: crypto.randomUUID(),
     name,
     hospitalId,
-    hospitalName,
+    hospitalName: "โรงพยาบาลสมมติ",
     code,
     createdById: userId,
     createdByName: userName,
