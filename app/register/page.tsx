@@ -82,18 +82,21 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
-  if (!isFormValid) return
 
-  if (!selectedHospital || !user?.email) return
+  if (!isFormValid || !selectedHospital || !user?.email) return
 
-  await completeRegistration({
-    email: user.email,
-    firstName,
-    lastName,
-    hospitalId: selectedHospital.hospitalId,
-})
+  try {
+    await completeRegistration({
+      email: user.email,
+      firstName,
+      lastName,
+      hospitalId: selectedHospital.hospitalId,
+    })
 
-  router.replace('/home')
+    router.replace('/home')
+  } catch (error) {
+    console.error('Registration failed:', error)
+  }
 }
 
 

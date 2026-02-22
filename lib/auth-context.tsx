@@ -1,5 +1,6 @@
 'use client'
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import {
@@ -37,6 +38,8 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter()
+
   const [user, setUser] = useState<User | null>(() => getPersistedUser())
   const [isLoading, setIsLoading] = useState(true)
 
@@ -53,13 +56,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // ล้าง query param ออกจาก URL
       window.history.replaceState({}, document.title, window.location.pathname)
+      console.log("token:", token)
+      console.log("profileComplete:", complete)
 
-      if (complete === "false") {
-        setIsLoading(false)
-        window.location.href = "/register"
-        return
+        if (complete === "false") {
+          setIsLoading(false)
+          router.replace("/register")
+          return
+        }
+
+        if (complete === "true") {
+          setIsLoading(false)
+          router.replace("/home")
+          return
+        }
       }
-    }
 
     // 2️⃣ โหลด user จาก backend
     const currentUser = await getCurrentUser()
@@ -76,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
     init()
- }, [])
+ }, [router])
 
   /* ============================= */
   /* Google Login */
