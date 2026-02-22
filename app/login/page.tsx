@@ -16,12 +16,14 @@ export default function LoginPage() {
 
 
   useEffect(() => {
-    if (user) {
-      if (isLoading) return
-  
-    if (user.isRegistered) {
-      router.replace('/home')
-    }
+    if (isLoading) return
+
+    if (!user) return
+
+    if (!user.isRegistered) {
+      router.replace("/register")
+    } else {
+      router.replace("/home")
     }
   }, [user, isLoading, router])
 

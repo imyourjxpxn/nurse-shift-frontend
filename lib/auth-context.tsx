@@ -51,23 +51,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const token = params.get("accessToken")
         const profileCompleted = params.get("profileCompleted")
 
+        console.log('token===========')
+        console.log(token)
+        console.log('===========')
+        console.log('profileCompleted===========')
+        console.log(profileCompleted)
+        console.log('===========')
+
+
         if (token) {
           localStorage.setItem("accessToken", token)
+
+          // 🔥 ดึง user จาก backend ทันทีหลังได้ token
+          const currentUser = await getCurrentUser()
+
+          console.log('token===========')
+          console.log(token)
+          console.log('===========')
+
+          if (currentUser) {
+            setUser(currentUser)
+            persistUser(currentUser)
+          } else {
+            setUser(null)
+            clearPersistedUser()
+          }
 
           // ลบ query ออกจาก URL กัน rerun
           window.history.replaceState({}, "", window.location.pathname)
 
-          if (profileCompleted === "false") {
-            router.replace("/register")
-          } else {
-            router.replace("/home")
-          }
+          // if (profileCompleted === "false") {
+          //   router.replace("/register")
+          // } else {
+          //   router.replace("/home")
+          // }
 
           return
         }
 
         // 2️⃣ โหลด user จาก backend ปกติ
         const currentUser = await getCurrentUser()
+
+        console.log('currentUser===========')
+        console.log(currentUser)
+        console.log('===========')
 
         if (currentUser) {
           setUser(currentUser)
